@@ -1,0 +1,78 @@
+# =============================================================================
+# Self-hosted Firecrawl override
+# =============================================================================
+# Adds a local Firecrawl stack (API + Playwright + Redis + RabbitMQ + Postgres)
+# to the WebGateway compose project.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.firecrawl.yml up
+#
+# Then enable the provider in config.yaml:
+#   firecrawl_selfhosted:
+#     base_url: http://firecrawl:3002
+#     enabled: true
+#
+# Resource requirements: ~6 GB RAM (Playwright 4G + API 2G minimum).
+# =============================================================================
+
+services:
+  firecrawl:
+    image: ghcr.io/firecrawl/firecrawl:latest
+    ports:
+      - "3002:3002"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: 3002
+      USE_DB_AUTHENTICATION: "false"
+      BULL_AUTH_KEY: ${BULL_AUTH_KEY:-changeme}
+      REDIS_URL: redis://redis:6379
+      REDIS_RATE_LIMIT_URL: redis://redis:6379
+      PLAYWRIGHT_MICROSERVICE_URL: http://playwright-service:3000/scrape
+      NUQ_RABBITMQ_URL: amqp://rabbitmq:5672
+      NUQ_DATABASE_URL: postgresql://postgres:postgres@nuq-postgres:5432/postgres
+    depends_on:
+      redis:
+        condition: service_started
+      playwright-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      nuq-postgres:
+        condition: service_started
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/v2/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  playwright-service:
+    image: ghcr.io/firecrawl/playwright-service:latest
+    environment:
+      PORT: 3000
+    cpus: 2.0
+    mem_limit: 4G
+    restart: "no"
+
+  redis:
+    image: redis:alpine
+    restart: "no"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: "no"
+
+  nuq-postgres:
+    image: ghcr.io/firecrawl/nuq-postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    restart: "no"

@@ -1,0 +1,124 @@
+services:
+  webgateway:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.test.yaml:/app/config.yaml:ro
+      - cache-data:/app/data
+    environment:
+      - JINA_API_KEY=${JINA_API_KEY:-}
+      - BRAVE_API_KEY=${BRAVE_API_KEY:-}
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:-}
+      - EXA_API_KEY=${EXA_API_KEY:-}
+    depends_on:
+      searxng:
+        condition: service_healthy
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./tests/integration/searxng_settings.yml:/etc/searxng/settings.yml:ro
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ---- Self-hosted Firecrawl (opt-in via --profile firecrawl-selfhosted) ----
+
+  firecrawl:
+    image: ghcr.io/firecrawl/firecrawl:latest
+    profiles: ["firecrawl-selfhosted"]
+    ports:
+      - "3002:3002"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3002"
+      USE_DB_AUTHENTICATION: "false"
+      BULL_AUTH_KEY: test-bull-key
+      REDIS_URL: redis://redis:6379
+      REDIS_RATE_LIMIT_URL: redis://redis:6379
+      PLAYWRIGHT_MICROSERVICE_URL: http://playwright-service:3000/scrape
+      NUQ_RABBITMQ_URL: amqp://rabbitmq:5672
+      NUQ_DATABASE_URL: postgresql://postgres:postgres@nuq-postgres:5432/postgres
+    depends_on:
+      redis:
+        condition: service_started
+      playwright-service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      nuq-postgres:
+        condition: service_started
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  playwright-service:
+    image: ghcr.io/firecrawl/playwright-service:latest
+    profiles: ["firecrawl-selfhosted"]
+    environment:
+      PORT: 3000
+    cpus: 2.0
+    mem_limit: 4G
+    restart: "no"
+
+  redis:
+    image: redis:alpine
+    profiles: ["firecrawl-selfhosted"]
+    restart: "no"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    profiles: ["firecrawl-selfhosted"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: "no"
+
+  nuq-postgres:
+    image: ghcr.io/firecrawl/nuq-postgres:latest
+    profiles: ["firecrawl-selfhosted"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    restart: "no"
+
+  # ---- Self-hosted DevDocs for documentation search ----
+
+  devdocs:
+    image: ghcr.io/freecodecamp/devdocs:latest-alpine
+    profiles: ["docs"]
+    ports:
+      - "9292:9292"
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9292/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  cache-data:

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Logs — WebGateway Admin{% endblock %}
+{% set active_page = "logs" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Logs</h1>
+
+  <!-- Filter controls -->
+  <div class="bg-white rounded-lg shadow-sm border p-4 mb-4">
+    <form hx-get="/admin/logs" hx-target="#log-entries" hx-trigger="submit" class="flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Key ID</label>
+        <input type="text" name="api_key_id" value="{{ filters.api_key_id or '' }}"
+               class="px-3 py-1.5 border border-gray-300 rounded text-sm w-40">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Provider</label>
+        <input type="text" name="provider" value="{{ filters.provider or '' }}"
+               class="px-3 py-1.5 border border-gray-300 rounded text-sm w-32">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+        <select name="status" class="px-3 py-1.5 border border-gray-300 rounded text-sm">
+          <option value="">All</option>
+          <option value="success" {% if filters.status == 'success' %}selected{% endif %}>Success</option>
+          <option value="error" {% if filters.status == 'error' %}selected{% endif %}>Error</option>
+          <option value="blocked" {% if filters.status == 'blocked' %}selected{% endif %}>Blocked</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Cache Hit</label>
+        <select name="cache_hit" class="px-3 py-1.5 border border-gray-300 rounded text-sm">
+          <option value="">All</option>
+          <option value="true" {% if filters.cache_hit == 'true' %}selected{% endif %}>Yes</option>
+          <option value="false" {% if filters.cache_hit == 'false' %}selected{% endif %}>No</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700">
+        Filter
+      </button>
+    </form>
+  </div>
+
+  <!-- Log entries -->
+  <div id="log-entries"
+       hx-get="/admin/logs"
+       hx-trigger="every 5s"
+       hx-target="#log-entries"
+       hx-swap="innerHTML">
+    {% include "logs_partial.html" %}
+  </div>
+</div>
+{% endblock %}

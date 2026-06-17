@@ -1,0 +1,207 @@
+# Test configuration for integration tests.
+# Auth keys are hardcoded. SearXNG is always available (self-hosted).
+# Jina is registered but its API key comes from JINA_API_KEY env var;
+# tests auto-skip when no key is present.
+
+defaults:
+  search_provider: searxng
+  extract_provider: jina
+  timeout: 15
+  retry:
+    strategy: fallback
+    max_attempts: 3
+    fallback_chain: []
+
+policies:
+  - name: reddit_glob_test
+    match:
+      domain: "*.reddit.com"
+    extract_provider: searxng
+
+providers:
+  searxng:
+    base_url: http://searxng:8080
+    enabled: true
+  jina:
+    api_key: ${JINA_API_KEY}
+    enabled: true
+  brave:
+    api_key: ${BRAVE_API_KEY:-}
+    enabled: true
+  tavily:
+    api_key: ${TAVILY_API_KEY:-}
+    enabled: true
+  firecrawl:
+    api_key: ${FIRECRAWL_API_KEY:-}
+    enabled: true
+    health_check_enabled: false
+  firecrawl_selfhosted:
+    base_url: http://firecrawl:3002
+    enabled: true
+  invisible_playwright:
+    base_url: http://invisible-playwright:3001
+    stealth: true
+    engine: firefox
+    firefox_version: "150"
+    cost_units_per_call: 0.8
+    specialization: stealth_primary
+    enabled: true
+  context7:
+    api_key: ${CONTEXT7_API_KEY:-}
+    enabled: true
+    specialization: docs
+    cost_units_per_call: 0.0
+  perplexity:
+    api_key: ${PERPLEXITY_API_KEY:-}
+    enabled: true
+    specialization: ai_native
+    cost_units_per_call: 0.1
+  devdocs:
+    base_url: http://devdocs:9292
+    enabled: true
+    specialization: docs
+    cost_units_per_call: 0.0
+  exa:
+    api_key: ${EXA_API_KEY:-}
+    enabled: true
+    specialization: semantic
+    cost_units_per_call: 1.0
+
+auth:
+  keys:
+    - id: key_agent1
+      secret: test-agent-key
+      label: "Test agent"
+    - id: key_admin
+      secret: test-admin-key
+      label: "Test admin"
+      admin: true
+
+logging:
+  path: logs/gateway.jsonl
+  max_bytes: 10485760
+  backup_count: 3
+
+sessions:
+  store_path: sessions
+
+cache:
+  enabled: true
+  backend: sqlite
+  db_path: data/cache.db
+  default_ttl: 300
+  invalidation_triggers:
+    - condition:
+        content_length_bytes: 100
+      action: invalidate_and_retry
+    - condition:
+        content_contains: ["Please enable JavaScript", "Access Denied"]
+      action: invalidate_and_retry_next_provider
+  rules:
+    - match:
+        content_type: search
+        provider: [searxng]
+      ttl: 600
+
+dlp_policies:
+  - name: test_dlp
+    description: "Simplified DLP for integration tests"
+    enabled: true
+    applies_to_providers: []
+    outbound_rules:
+      - name: "SSN"
+        pattern: '\b(?!000|666|9\d{2})\d{3}[-.\s]?(?!00)\d{2}[-.\s]?(?!0000)\d{4}\b'
+        action: block
+        severity: critical
+      - name: "Email"
+        pattern: '\b[\w.]+@[\w.]+\.[a-z]{2,}\b'
+        action: redact
+        replacement: "[REDACTED_EMAIL]"
+        severity: medium
+      - name: "Health reroute"
+        pattern: '(?i)(diagnosis|medication)'
+        action: reroute
+        reroute_to: searxng
+        severity: high
+    inbound_rules:
+      - name: "AWS key"
+        pattern: '\b((?:AKIA|ASIA)[A-Z2-7]{16})\b'
+        action: redact
+        replacement: "[REDACTED_AWS_KEY]"
+        severity: critical
+      - name: "OpenAI key"
+        pattern: '\bsk-[a-zA-Z0-9]{20,}\b'
+        action: redact
+        replacement: "[REDACTED_OPENAI_KEY]"
+        severity: critical
+
+# MCP server enabled for integration testing
+mcp:
+  enabled: true
+  mount_path: /mcp
+  json_response: true
+  stateless: true
+
+circuit_breaker:
+  enabled: true
+  providers:
+    default:
+      error_threshold: 3
+      window_seconds: 30
+      cooldown_seconds: 10
+      trip_on: ["429", "503", "timeout"]
+
+quotas: {}
+alerts: {}
+
+post_processing:
+  default:
+    stage1_extractor: trafilatura
+    stage2_converter: markdownify
+    stage3_clean: true
+    stage4_deduplicate: false
+  cleaning:
+    min_content_length: 200
+    additional_boilerplate_patterns: []
+  deduplication:
+    enabled: false
+    store: sqlite
+  providers:
+    firecrawl:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: true
+    jina:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: true
+
+llm_judge:
+  enabled: false
+
+prompt_injection:
+  enabled: true
+  layers:
+    rebuff:
+      enabled: true
+    onnx_classifier:
+      enabled: true
+      model_path: /app/models/model.onnx
+      threshold: 0.85
+    llm_judge:
+      enabled: false
+    lakera_guard:
+      enabled: false
+  thresholds:
+    heuristic_score_alert: 0.2
+    heuristic_score_block: 0.6
+    classifier_score_alert: 0.6
+    classifier_score_block: 0.90
+  actions:
+    on_pattern_match: scrub
+    on_high_score: alert
+    on_judge_confirmed: block
+    on_lakera_detected: block
+  exemptions:
+    domains: []
+    api_key_ids: []

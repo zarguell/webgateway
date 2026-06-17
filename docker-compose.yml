@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  webgateway:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./logs:/app/logs
+      - ./sessions:/app/sessions
+      - ./data:/app/data       # SQLite DB location (keys, usage, quota, cache)
+      - ./static:/app/static   # compiled MkDocs output (optional, built-in for prod)
+    env_file:
+      - .env
+    environment:
+      STEALTH_PLAYWRIGHT_URL: http://invisible-playwright:3001
+    depends_on:
+      - searxng
+    restart: unless-stopped
+    networks:
+      - webgateway-net
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    networks:
+      - webgateway-net
+
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    profiles:
+      - vpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "8888:8888"
+    environment:
+      - VPN_SERVICE_PROVIDER=mullvad
+      - VPN_TYPE=wireguard
+      - HTTPPROXY=on
+      # Uncomment and set your WireGuard keys:
+      # - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      # - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      # - WIREGUARD_DNS=${WIREGUARD_DNS:-1.1.1.1}
+    restart: unless-stopped
+    networks:
+      - webgateway-net
+
+  # --- Stealth browser (C++-patched Firefox 150) ---
+  invisible-playwright:
+    image: webgateway/invisible-playwright:latest
+    profiles: ["stealth", "browsers"]
+    ports: ["3001:3001"]
+    environment:
+      - MAX_CONCURRENT_SESSIONS=3
+      - SESSION_TIMEOUT=300
+      - FINGERPRINT_ROTATE=true
+    volumes:
+      - ./sessions/invisible-playwright:/app/sessions
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 512m
+    restart: unless-stopped
+
+networks:
+  webgateway-net:
+    driver: bridge
+
+volumes:
+  cache-data:

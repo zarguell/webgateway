@@ -1,0 +1,488 @@
+# =============================================================================
+# WebGateway Configuration
+# =============================================================================
+# This file is hot-reloadable via POST /admin/reload or filesystem watch.
+# Environment variables are resolved at process start via ${VAR} syntax.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Defaults — used when no policy rule matches
+# ---------------------------------------------------------------------------
+defaults:
+  search_provider: searxng
+  extract_provider: jina
+  timeout: 15
+  retry:
+    strategy: fallback            # fallback | exponential | none
+    max_attempts: 3
+    fallback_chain:
+      - jina
+      - firecrawl
+      - playwright
+
+# ---------------------------------------------------------------------------
+# Routing Policies — evaluated in order, first match wins
+# ---------------------------------------------------------------------------
+policies:
+  - name: reddit
+    match:
+      domain: "*.reddit.com"
+    extract_provider: crawl4ai
+    proxy: gluetun
+
+  - name: paywalled_news
+    match:
+      domain_glob:
+        - "*.wsj.com"
+        - "*.nytimes.com"
+        - "*.ft.com"
+        - "*.bloomberg.com"
+    extract_provider: playwright
+    playwright_profile: wsj_session
+    proxy: residential_us
+
+  - name: cloudflare_protected
+    match:
+      on_error_class:
+        - bot_detected
+        - 403
+    extract_provider: flaresolverr
+
+  - name: health_queries_local_only
+    match:
+      query_contains:
+        - diagnosis
+        - medication
+        - "patient record"
+        - prognosis
+    allowed_providers:
+      - searxng
+      - crawl4ai
+    dlp_policy: no_cloud_health
+
+# ---------------------------------------------------------------------------
+# Named Proxies — referenced by policy rules above
+# ---------------------------------------------------------------------------
+proxies:
+  gluetun:
+    type: http
+    url: http://gluetun:8888
+  residential_us:
+    type: http
+    url: http://brightdata-proxy:24000
+
+# ---------------------------------------------------------------------------
+# Provider Configuration
+# ---------------------------------------------------------------------------
+providers:
+  # Self-hosted meta-search engine
+  searxng:
+    base_url: http://searxng:8080
+
+  # Lightweight read-it extraction (generous free tier)
+  jina:
+    api_key: ${JINA_API_KEY}
+
+  # Full-featured extraction (JS rendering, structured output)
+  firecrawl:
+    api_key: ${FIRECRAWL_API_KEY}
+
+  # Self-hosted Firecrawl (requires docker-compose.firecrawl.yml override)
+  # Start the stack first: docker compose -f docker-compose.yml -f docker-compose.firecrawl.yml up
+  firecrawl_selfhosted:
+    base_url: http://firecrawl:3002
+    enabled: false
+
+  # Fast dedicated search API
+  brave:
+    api_key: ${BRAVE_API_KEY}
+
+  # Agent-optimised search / RAG
+  tavily:
+    api_key: ${TAVILY_API_KEY}
+
+  # Remote browser via Playwright (separate compose service)
+  playwright:
+    base_url: http://playwright:3000
+
+  # Cloudflare challenge solver (separate compose service)
+  flaresolverr:
+    base_url: http://flaresolverr:8191
+
+  # Managed anti-bot extraction
+  zyte:
+    api_key: ${ZYTE_API_KEY}
+
+  # Stealth browser — C++-patched Firefox 150, undetectable scraping
+  invisible_playwright:
+    base_url: http://invisible-playwright:3001
+    stealth: true
+    engine: firefox
+    firefox_version: "150"
+    cost_units_per_call: 0.8
+
+  # Library docs search (MCP-native)
+  context7:
+    api_key: ${CONTEXT7_API_KEY:-}
+    specialization: docs
+    cost_units_per_call: 0.0
+
+  # AI-native search with citations
+  perplexity:
+    api_key: ${PERPLEXITY_API_KEY:-}
+    specialization: ai_native
+    cost_units_per_call: 0.1
+
+  # Self-hosted documentation browser
+  devdocs:
+    base_url: http://devdocs:9292
+    specialization: docs
+    cost_units_per_call: 0.0
+
+  # Neural semantic search
+  exa:
+    api_key: ${EXA_API_KEY:-}
+    specialization: semantic
+    cost_units_per_call: 1.0
+    specialization: stealth_primary
+
+# ---------------------------------------------------------------------------
+# LLM Judge — fires on policy miss or retry to resolve ambiguous routing
+# ---------------------------------------------------------------------------
+llm_judge:
+  enabled: true
+  model: ollama/gemma3:1b
+  ollama_url: http://ollama:11434
+  triggers:
+    - on_policy_miss
+    - on_retry
+  cache_decisions: true
+  cache_ttl_seconds: 3600
+  confidence_threshold: 0.70
+
+# ---------------------------------------------------------------------------
+# DLP (Data Loss Prevention) Policies
+#
+# Pattern sources: Gitleaks (MIT), secrets-patterns-db (CC BY 4.0)
+# See docs/adr/001-dlp-regex-only.md for design rationale.
+# ---------------------------------------------------------------------------
+dlp_policies:
+  - name: no_pii_upstream
+    description: "Block/redact PII before sending to cloud providers"
+    enabled: true
+    applies_to_providers:
+      - tavily
+      - brave
+      - jina
+      - firecrawl
+    outbound_rules:
+      - name: "US SSN"
+        pattern: '\\b(?!000|666|9\d{2})\d{3}[-.\s]?(?!00)\d{2}[-.\s]?(?!0000)\d{4}\b'
+        action: block
+        severity: critical
+      - name: "Email address"
+        pattern: '\b[\w.]+@[\w.]+\.[a-z]{2,}\b'
+        action: redact
+        replacement: "[REDACTED_EMAIL]"
+        severity: medium
+      - name: "Credit card number"
+        pattern: '\b(?:\d[ -]*?){13,19}\b'
+        action: block
+        validate_luhn: true
+        severity: critical
+    inbound_rules:
+      - name: "OpenAI API key"
+        pattern: '\bsk-[a-zA-Z0-9]{20,}T3BlbkFJ[a-zA-Z0-9_-]+\b'
+        action: redact
+        replacement: "[REDACTED_OPENAI_KEY]"
+        severity: critical
+      - name: "Anthropic API key"
+        pattern: '\bsk-ant-api\d{2}-[a-zA-Z0-9_\-]{93}AA\b'
+        action: redact
+        replacement: "[REDACTED_ANTHROPIC_KEY]"
+        severity: critical
+
+  - name: no_cloud_health
+    description: "Health queries must never reach cloud-hosted providers"
+    enabled: true
+    applies_to_providers:
+      - tavily
+      - brave
+      - jina
+      - zyte
+    outbound_rules:
+      - name: "Health-sensitive terms"
+        pattern: '(?i)(diagnosis|medication|patient record|prognosis)'
+        action: reroute
+        reroute_to: searxng
+        severity: high
+
+  - name: secret_redaction_all
+    description: "Redact secrets from all provider responses (inbound)"
+    enabled: true
+    applies_to_providers: []
+    inbound_rules:
+      # --- Cloud provider keys ---
+      - name: "AWS Access Key ID"
+        pattern: '\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\b'
+        action: redact
+        replacement: "[REDACTED_AWS_KEY]"
+        severity: critical
+      - name: "GCP / Gemini API Key"
+        pattern: '\bAIza[\w-]{35}\b'
+        action: redact
+        replacement: "[REDACTED_GCP_KEY]"
+        severity: critical
+      # --- AI provider keys ---
+      - name: "OpenAI API key (broad)"
+        pattern: '\bsk-(?:proj-|svcacct-|service-)?[a-zA-Z0-9_-]{20,}\b'
+        action: redact
+        replacement: "[REDACTED_OPENAI_KEY]"
+        severity: critical
+      - name: "Anthropic API key (broad)"
+        pattern: '\bsk-ant-[a-zA-Z0-9_\-]{10,}\b'
+        action: redact
+        replacement: "[REDACTED_ANTHROPIC_KEY]"
+        severity: critical
+      # --- Developer tokens ---
+      - name: "GitHub Token"
+        pattern: '\b(?:ghp|gho|ghu|ghs)_[0-9a-zA-Z]{36}\b'
+        action: redact
+        replacement: "[REDACTED_GITHUB_TOKEN]"
+        severity: critical
+      - name: "GitHub Fine-grained PAT"
+        pattern: '\bgithub_pat_\w{82}\b'
+        action: redact
+        replacement: "[REDACTED_GITHUB_PAT]"
+        severity: critical
+      # --- Infrastructure secrets ---
+      - name: "PEM Private Key"
+        pattern: '(?i)-----BEGIN[A ]*[A-Z0-9_-]{0,100}PRIVATE KEY(?: BLOCK)?-----'
+        action: redact
+        replacement: "[REDACTED_PRIVATE_KEY]"
+        severity: critical
+      - name: "Database connection string"
+        pattern: '(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis)://[^:\s]+:[^@\s]+@'
+        action: redact
+        replacement: "[REDACTED_CONNECTION_STRING]"
+        severity: critical
+
+# ---------------------------------------------------------------------------
+# Authentication — static API keys
+# ---------------------------------------------------------------------------
+auth:
+  keys:
+    - id: key_agent1
+      secret: ${AGENT1_KEY}
+      label: "Primary agent"
+    - id: key_admin
+      secret: ${ADMIN_KEY}
+      label: "Admin"
+      admin: true
+
+# ---------------------------------------------------------------------------
+# Audit Logging
+# ---------------------------------------------------------------------------
+logging:
+  path: logs/gateway.jsonl
+  max_bytes: 10485760       # 10 MB per file
+  backup_count: 5
+
+# ---------------------------------------------------------------------------
+# Session / Cookie Jar Store
+# ---------------------------------------------------------------------------
+sessions:
+  store_path: sessions
+  encryption_key: ${SESSION_ENCRYPTION_KEY}
+  auto_invalidate_on_login_wall: true
+  strict_proxy_binding: true
+  login_wall_patterns:
+    - "Sign in"
+    - "Log in to continue"
+    - "Subscribe to read"
+    - "Create an account"
+    - "Your session has expired"
+    - "Please log in"
+    - "Access restricted"
+
+# ---------------------------------------------------------------------------
+# Stealth Browser — invisible_playwright settings
+# ---------------------------------------------------------------------------
+stealth:
+  fingerprint_rotation:
+    same_domain_window_seconds: 3600
+    pool_size: 10
+
+# ---------------------------------------------------------------------------
+# Content Post-Processing — cleans raw HTML/markdown from scrape providers
+# ---------------------------------------------------------------------------
+post_processing:
+  default:
+    stage1_extractor: trafilatura
+    stage2_converter: markdownify
+    stage3_clean: true
+    stage4_deduplicate: false
+
+  cleaning:
+    min_content_length: 200
+    additional_boilerplate_patterns: []
+
+  deduplication:
+    enabled: false
+    store: sqlite
+
+  providers:
+    firecrawl:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: true
+    jina:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: true
+
+# ---------------------------------------------------------------------------
+# Response Cache (PRD §17)
+# ---------------------------------------------------------------------------
+cache:
+  enabled: true
+  backend: sqlite
+  db_path: data/cache.db
+  default_ttl: 300
+  honor_cache_control_headers: false
+  honor_etag: false
+  policy_ttl_wins_if_shorter: true
+  invalidation_triggers:
+    - condition:
+        content_length_bytes: 500
+      action: invalidate_and_retry
+    - condition:
+        content_contains:
+          - "<script>"
+          - "window.__"
+          - "Please enable JavaScript"
+          - "Are you a robot"
+          - "Access Denied"
+      action: invalidate_and_retry_next_provider
+    - condition:
+        provider_error_class: [403, 429, "bot_detected"]
+      action: invalidate
+  rules:
+    - match:
+        domain_glob: ["*.wikipedia.org", "*.github.com"]
+      ttl: 43200
+    - match:
+        domain_glob: ["*.reuters.com", "*.apnews.com"]
+      ttl: 300
+    - match:
+        domain_glob: ["*.bloomberg.com", "*.wsj.com"]
+      ttl: 900
+    - match:
+        url_pattern: ".*/(about|contact|pricing|homepage).*"
+      ttl: 3600
+    - match:
+        content_type: search
+        provider: [searxng]
+      ttl: 600
+    - match:
+        content_type: search
+        provider: [brave, tavily]
+      ttl: 120
+
+# ---------------------------------------------------------------------------
+# Provider Resource Management — Circuit Breaker + Quotas (PRD §18)
+# ---------------------------------------------------------------------------
+circuit_breaker:
+  enabled: true
+  providers:
+    default:
+      error_threshold: 5
+      window_seconds: 60
+      cooldown_seconds: 120
+      trip_on: ["429", "503", "timeout", "bot_detected"]
+    zyte:
+      error_threshold: 2
+      cooldown_seconds: 300
+
+quotas:
+  exa:
+    monthly_limit: 100
+    alert_at_percent: 80
+    exhausted_action: remove_from_pool
+    reset_day: 1
+  tavily:
+    monthly_limit: 1000
+    alert_at_percent: 90
+    exhausted_action: remove_from_pool
+  brave:
+    monthly_limit: 2000
+    daily_limit: 200
+    exhausted_action: fallback_only
+
+alerts:
+  webhook_url: ${ALERT_WEBHOOK_URL}
+  events: [quota_alert, circuit_open, quota_exhausted]
+
+# ---------------------------------------------------------------------------
+# MCP Server — downstream interface for AI agents
+# ---------------------------------------------------------------------------
+# When enabled, exposes web_search and web_extract as MCP tools via
+# Streamable HTTP at POST /{mount_path}. Auth uses the same Bearer tokens
+# as the REST API.
+# ---------------------------------------------------------------------------
+mcp:
+  enabled: false               # set true to activate the MCP endpoint
+  mount_path: /mcp
+  json_response: true
+  stateless: true
+
+# Prompt injection detection (PRD §27)
+prompt_injection:
+  enabled: false  # opt-in — set to true to enable
+
+  layers:
+    rebuff:
+      enabled: true
+      custom_patterns: []
+      vector_db:
+        enabled: false
+        provider: chroma_sqlite
+        path: /app/data/injection_vectors
+      embeddings:
+        provider: ollama
+        model: nomic-embed-text
+        url: http://ollama:11434
+
+    onnx_classifier:
+      enabled: true
+      model_path: /app/models/model.onnx
+      threshold: 0.85
+
+    llm_judge:
+      enabled: false
+      model: ollama/gemma3:1b
+      excerpt_max_chars: 500
+
+    lakera_guard:
+      enabled: false
+      api_key: ${LAKERA_API_KEY:-}
+      dlp_acknowledgement: false
+
+  thresholds:
+    heuristic_score_alert: 0.5
+    heuristic_score_block: 0.85
+    classifier_score_alert: 0.6
+    classifier_score_block: 0.90
+    llm_judge_escalate: 0.65
+
+  actions:
+    on_pattern_match: scrub
+    on_high_score: alert
+    on_judge_confirmed: block
+    on_lakera_detected: block
+
+  exemptions:
+    domains:
+      - "docs.python.org"
+      - "developer.mozilla.org"
+    api_key_ids: []

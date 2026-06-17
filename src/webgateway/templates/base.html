@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}WebGateway Admin{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{wg:{blue:'#2563eb',gray:'#64748b'}}}}}</script>
+</head>
+<body class="h-full">
+  <div class="flex h-full">
+    {% if session %}
+    <!-- Sidebar -->
+    <nav class="w-64 bg-slate-900 text-white flex flex-col shrink-0">
+      <div class="p-4 border-b border-slate-700">
+        <h1 class="text-lg font-bold">WebGateway</h1>
+        <p class="text-xs text-slate-400 mt-1">Admin Console</p>
+      </div>
+      <div class="flex-1 p-3 space-y-1">
+        <a href="/admin/dashboard"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'dashboard' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Dashboard
+        </a>
+        <a href="/admin/keys"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'keys' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          API Keys
+        </a>
+        <a href="/admin/providers"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'providers' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Providers
+        </a>
+        <a href="/admin/sessions"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'sessions' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Sessions
+        </a>
+        <a href="/admin/usage"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'usage' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Usage
+        </a>
+        <a href="/admin/logs"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'logs' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Logs
+        </a>
+        <a href="/admin/cache"
+           class="block px-3 py-2 rounded text-sm {% if active_page == 'cache' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800{% endif %}">
+          Cache
+        </a>
+      </div>
+      <div class="p-3 border-t border-slate-700">
+        <a href="/admin/logout" class="block px-3 py-2 rounded text-sm text-slate-300 hover:bg-slate-800">
+          Logout
+        </a>
+      </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-auto p-6">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

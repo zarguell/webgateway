@@ -1,0 +1,14 @@
+use_default_settings: true
+
+search:
+  formats:
+    - html
+    - json
+
+server:
+  secret_key: "test-not-for-production-0123456789abcdef"
+  limiter: false
+  image_proxy: false
+
+ui:
+  static_use_hash: true

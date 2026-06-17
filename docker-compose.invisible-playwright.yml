@@ -1,0 +1,25 @@
+# Standalone invisible_playwright sidecar for development and testing.
+# Start with:   docker compose -f docker-compose.invisible-playwright.yml up -d --build
+# Or merge with the test stack:
+#   docker compose -f docker-compose.test.yml -f docker-compose.invisible-playwright.yml up -d --build
+
+services:
+  invisible-playwright:
+    build:
+      context: ./services/invisible-playwright
+      dockerfile: Dockerfile
+    image: webgateway/invisible-playwright:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - MAX_CONCURRENT_SESSIONS=3
+      - SESSION_TIMEOUT=300
+      - FINGERPRINT_ROTATE=true
+    shm_size: 2g
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+        reservations:
+          memory: 1g
+    restart: unless-stopped

@@ -1,0 +1,60 @@
+site_name: WebGateway
+site_description: Self-hosted, policy-driven web search and extraction gateway for AI agents
+repo_url: https://github.com/user/webgateway
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: blue
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - toc:
+      permalink: true
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Docker Compose Quickstart: getting-started/docker-compose.md
+    - First API Call: getting-started/first-api-call.md
+    - Bootstrap Admin Key Setup: getting-started/bootstrap-key.md
+  - Configuration:
+    - config.yaml Reference: configuration/config-yaml.md
+    - .env Reference: configuration/env-reference.md
+    - Provider Setup Guides: configuration/provider-setup.md
+    - Policy Engine: configuration/policy-engine.md
+    - DLP Policy Configuration: configuration/dlp-policy.md
+    - Proxy Configuration: configuration/proxy.md
+  - Providers:
+    - Search Providers: providers/search.md
+    - Extract Providers: providers/extract.md
+    - Stealth Browsers: providers/stealth.md
+    - Provider Data Policies: providers/data-policies.md
+  - Sessions & Authentication:
+    - Cookie Bucket Setup: sessions/cookie-bucket.md
+    - Session Lifecycle: sessions/lifecycle.md
+    - API Key Management: sessions/api-keys.md
+    - Bootstrap & First Run: sessions/bootstrap.md
+  - Operations:
+    - Admin UI Guide: operations/admin-ui.md
+    - Monitoring & Alerting: operations/monitoring.md
+    - Cache Management: operations/cache.md
+    - Circuit Breaker: operations/circuit-breaker.md
+    - Quota Management: operations/quota.md
+  - API Reference:
+    - Interactive API Docs: api/interactive.md
+  - Architecture:
+    - System Design: architecture/overview.md
+    - LiteLLM Integration: architecture/litellm.md
+    - Docker Compose Profiles: architecture/compose-profiles.md
