@@ -1,6 +1,8 @@
 site_name: WebGateway
 site_description: Self-hosted, policy-driven web search and extraction gateway for AI agents
-repo_url: https://github.com/user/webgateway
+site_url: https://zarguell.github.io/webgateway
+repo_url: https://github.com/zarguell/webgateway
+edit_uri: edit/main/docs-src/docs/
 theme:
   name: material
   palette:
