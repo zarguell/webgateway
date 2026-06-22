@@ -14,6 +14,7 @@ from webgateway.config import ConfigManager
 from webgateway.providers.base import ProviderAdapter, ProviderMetadata
 from webgateway.providers.brave import BraveSearchAdapter
 from webgateway.providers.context7 import Context7Adapter
+from webgateway.providers.crawl4ai import Crawl4AIAdapter
 from webgateway.providers.devdocs import DevDocsAdapter
 from webgateway.providers.exa import ExaAdapter
 from webgateway.providers.firecrawl import FirecrawlAdapter
@@ -131,6 +132,20 @@ class ProviderRegistry:
             return ExaAdapter(
                 api_key=cfg.api_key,
                 timeout=cfg.timeout or 15,
+            )
+        if name == "crawl4ai":
+            return Crawl4AIAdapter(
+                base_url=cfg.base_url or "http://crawl4ai:11235",
+                timeout=cfg.timeout or 30,
+                mode="crawl",
+                api_token=cfg.api_key,
+            )
+        if name == "crawl4ai_md":
+            return Crawl4AIAdapter(
+                base_url=cfg.base_url or "http://crawl4ai:11235",
+                timeout=cfg.timeout or 30,
+                mode="md",
+                api_token=cfg.api_key,
             )
 
         logger.warning("Unknown provider type %r — skipping", name)
