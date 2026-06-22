@@ -3,7 +3,7 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
-    paths: ['docs-src/**']
+    paths: ['docs-src/**', '.github/workflows/deploy-docs.yml']
   workflow_dispatch:
 
 permissions:
@@ -30,11 +30,11 @@ jobs:
         run: pip install mkdocs-material
 
       - name: Build
-        run: mkdocs build -f docs-src/mkdocs.yml -d site
+        run: mkdocs build -f docs-src/mkdocs.yml
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: docs-src/site
 
   deploy:
     needs: build
