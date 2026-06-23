@@ -70,21 +70,15 @@ class PostProcessingPipeline:
         structured_data: dict | list | None = None
 
         # Stage 0: extraction strategy (policy-driven, JSON-LD etc.)
+        # Runs on raw HTML to extract structured data. The full content still
+        # flows through stages 1-2 so agents get both the extracted page and
+        # any structured data we found.
         if self._strategy_selector is not None and format == "html":
             strategy_result = await self._strategy_selector.run(
                 content, url, policy_matched=policy_matched,
             )
             if strategy_result is not None:
-                content = strategy_result.content
-                format = strategy_result.format
                 structured_data = strategy_result.structured_data
-                # Override config to skip stages 1-2 (strategy output is clean)
-                pcfg = ExtractorConfig(
-                    stage1_extractor="none",
-                    stage2_converter="none",
-                    stage3_clean=pcfg.stage3_clean,
-                    stage4_deduplicate=pcfg.stage4_deduplicate,
-                )
 
         # Stage 1: Main content extraction
         extractor = pcfg.stage1_extractor
