@@ -34,6 +34,31 @@ make test-integration
 make test-integration-firecrawl
 ```
 
+## Local dev stack
+
+The local stack (`docker-compose.local.yml`) is used for **development and research** — this OpenCode instance uses WebGateway's `web_search` and `web_extract` MCP tools through it.
+
+### Starting
+
+```bash
+./scripts/launch-chrome-cdp.sh                                # launch Chrome with CDP
+docker compose -f docker-compose.local.yml --profile local up -d --build  # start stack
+```
+
+### Rebuilding
+
+Source code changes (adapter edits, new providers, config changes) **require rebuilding the gateway container**:
+
+```bash
+docker compose -f docker-compose.local.yml --profile local up -d --build webgateway
+```
+
+Config-only changes (`config.local.yaml`) use hot-reload — just `POST /admin/reload`.
+
+### Risk note
+
+**Frequent/potentially risky commits can break the local dev stack.** If you revert or change something that affects the gateway code, the container needs to be rebuilt. If the gateway is down, this agent loses `web_search`/`web_extract` for research during development. When making risky changes, plan a rebuild after committing or keep the test stack (`docker-compose.test.yml`) as a fallback.
+
 ## Architecture
 
 ```

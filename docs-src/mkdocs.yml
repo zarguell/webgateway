@@ -56,6 +56,7 @@ nav:
     - Circuit Breaker: operations/circuit-breaker.md
     - Quota Management: operations/quota.md
     - Alerts: operations/alerts.md
+    - Local Dev: operations/local-dev.md
   - API Reference:
     - Interactive API Docs: api/interactive.md
   - Architecture:
