@@ -632,6 +632,7 @@ class GatewayService:
         # --- post-processing pipeline ---
         pp_info: PostProcessingInfo | None = None
         pi_info: PromptInjectionInfo | None = None
+        structured_data: dict | list | None = None
         injection_detected = False
         injection_type: str | None = None
         injection_action: str | None = None
@@ -663,10 +664,12 @@ class GatewayService:
                 url=request.url,
                 format=result.format,
                 provider=provider_used,
+                policy_matched=decision.policy_matched,
                 skip_injection=skip_injection,
             )
             result.content = pp_result.content
             result.format = pp_result.format
+            structured_data = pp_result.structured_data
             pp_info = PostProcessingInfo(
                 extractor_used=pp_result.extractor_used,
                 extraction_fallback=pp_result.extraction_fallback,
@@ -819,6 +822,7 @@ class GatewayService:
             quality_warning=not quality_passed,
             post_processing=pp_info,
             prompt_injection=pi_info,
+            structured_data=structured_data if request.format == "json" else None,
         )
 
         if cache_write and quality_passed:

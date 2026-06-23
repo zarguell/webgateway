@@ -34,6 +34,8 @@ from webgateway.mcp.server import mount_mcp
 from webgateway.policy.engine import PolicyEngine
 from webgateway.post_processing.dedup import DedupStore
 from webgateway.post_processing.pipeline import PostProcessingPipeline
+from webgateway.post_processing.strategies import StrategySelector
+from webgateway.post_processing.strategies.json_ld import JsonLdStrategy
 from webgateway.providers.base import ProviderError
 from webgateway.providers.registry import ProviderRegistry
 from webgateway.proxy import ProxyResolver
@@ -135,6 +137,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         injection_detector = InjectionDetector(pi_config)
         app.state.injection_detector = injection_detector
 
+    # --- Extraction strategies ---
+    strategy_selector = StrategySelector(config_manager)
+    strategy_selector.register("json_ld", JsonLdStrategy())
+    app.state.strategy_selector = strategy_selector
+
     # --- Post-processing pipeline ---
     dedup_store = None
     pp_config = config_manager.config.post_processing
@@ -142,6 +149,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         dedup_store = DedupStore(db_path="data/dedup.db")
     post_processing = PostProcessingPipeline(
         config=pp_config,
+        strategy_selector=strategy_selector,
         dedup_store=dedup_store,
         injection_detector=injection_detector,
     )
