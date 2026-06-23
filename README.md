@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
   <img src="https://img.shields.io/badge/python-3.12-blue" alt="Python 3.12">
-  <img src="https://img.shields.io/badge/tests-352_passings-green" alt="352 tests">
+  <img src="https://img.shields.io/badge/tests-408_passings-green" alt="408 tests">
 </p>
 
 # WebGateway
@@ -17,7 +17,7 @@ Agent / LLM
      ↓
   WebGateway  ←  policy engine, DLP, cache, provider dispatch
      ↓
-  SearXNG | Jina | Brave | Tavily | Firecrawl | Exa | Context7 | ...
+   SearXNG | Jina | Brave | Tavily | Firecrawl | Exa | Context7 | DuckDuckGo | Zyte | FlareSolverr | ...
 ```
 
 ---
@@ -51,13 +51,14 @@ curl -X POST http://localhost:8080/extract \
 
 | Capability | What it does |
 |---|---|
-| **10+ providers** | Self-hosted: SearXNG, DevDocs, InvisiblePlaywright. Cloud: Jina, Brave, Tavily, Firecrawl, Exa, Context7, Perplexity |
+| **16 providers** | Self-hosted: SearXNG, DevDocs, Crawl4AI, InvisiblePlaywright, FlareSolverr. Cloud: Jina, Brave, Tavily, Firecrawl, Exa, Context7, Perplexity, Zyte. Free: DuckDuckGo |
 | **Two-tier policy engine** | Deterministic YAML rules (domain glob, URL pattern, API key) → LLM judge on miss |
 | **DLP middleware** | Outbound + inbound regex scanning, Luhn validation, redact/block/reroute actions |
 | **Content pipeline** | Trafilatura extraction → markdownify conversion → boilerplate cleaning → dedup → prompt injection detection |
 | **Prompt injection detection** | Layer 1: Rebuff heuristics (6 categories). Layer 2: ONNX DeBERTa classifier (704MB model, ~8ms inference). Layer 3: LLM judge escalation |
 | **Response cache** | SQLite-backed, per-policy TTL rules, quality validation (length, JS blob, error page detection) |
 | **Circuit breaker + quotas** | Per-provider three-state machine, monthly/daily quota tracking, quota-aware fallback reordering |
+| **Alerting** | Webhook + SMTP dispatch on circuit open, quota alerts, quota exhaustion. Configurable suppression window |
 | **MCP server** | Downstream `web_search` / `web_extract` tools for AI agents that speak MCP |
 | **Proxy injection** | HTTP CONNECT + SOCKS5, per-request proxy via policy rules |
 | **Admin UI** | Browser-based dashboard: provider health, cache ops, usage charts, key management, session viewer |
