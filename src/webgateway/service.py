@@ -57,6 +57,31 @@ from webgateway.schemas import (
 from webgateway.sessions.manager import SessionError, SessionManager
 from webgateway.sessions.models import SessionData
 
+# Patterns that indicate a provider response was blocked by bot detection.
+# When the fallback loop detects these in a response, it auto-injects a
+# bot-solving provider (flaresolverr, invisible_playwright) into the
+# candidate list — no per-domain policy rule needed.
+BOT_BLOCK_PATTERNS: list[str] = [
+    "Please enable JavaScript",
+    "Access Denied",
+    "Just a moment...",
+    "Checking your browser",
+    "DDoS protection",
+    "Cloudflare",
+    "_cf_chl_opt",
+    "cf-browser-verification",
+    "geetest",
+    "captcha-delivery.com",
+    "var dd=",
+]
+
+_BOT_SOLVERS: list[str] = ["flaresolverr", "invisible_playwright"]
+
+
+def _is_bot_block(content: str) -> bool:
+    """Return True if *content* matches bot-block patterns."""
+    return any(p in content for p in BOT_BLOCK_PATTERNS)
+
 __all__ = ["GatewayService"]
 
 
@@ -953,6 +978,18 @@ class GatewayService:
                     if not passed:
                         last_result = result
                         last_provider = candidate_name
+                        # Auto-inject bot-solving providers when content looks
+                        # like a CAPTCHA or bot-detection page.  This lets the
+                        # gateway transparently reroute through FlareSolverr or
+                        # invisible_playwright without per-domain policy rules.
+                        content = getattr(result, "content", "")
+                        if _is_bot_block(content):
+                            for solver in _BOT_SOLVERS:
+                                if (
+                                    solver not in candidates
+                                    and self._provider_registry.has(solver)
+                                ):
+                                    candidates.append(solver)
                         if idx < len(candidates) - 1:
                             continue
                         return result, candidate_name, False
