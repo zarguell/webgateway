@@ -61,6 +61,7 @@ nav:
     - Interactive API Docs: api/interactive.md
   - Architecture:
     - System Design: architecture/overview.md
+    - MCP Design: architecture/mcp-design.md
     - LiteLLM Integration: architecture/litellm.md
     - Docker Compose Profiles: architecture/compose-profiles.md
   - Development:
