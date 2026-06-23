@@ -50,7 +50,7 @@ policies:
     match:
       domain_glob:
         - "*.etsy.com"
-    extract_provider: invisible_playwright
+    extract_provider: flaresolverr
     extract_strategy:
       priority:
         - json_ld
@@ -61,7 +61,7 @@ policies:
     match:
       domain_glob:
         - "*.bestbuy.com"
-    extract_provider: invisible_playwright
+    extract_provider: flaresolverr
     extract_strategy:
       priority:
         - json_ld
@@ -72,7 +72,7 @@ policies:
     match:
       domain_glob:
         - "*.walmart.com"
-    extract_provider: invisible_playwright
+    extract_provider: flaresolverr
     extract_strategy:
       priority:
         - json_ld
@@ -131,6 +131,9 @@ providers:
     firefox_version: "150"
     cost_units_per_call: 0.8
     specialization: stealth_primary
+    enabled: true
+  flaresolverr:
+    base_url: http://flaresolverr:8191
     enabled: true
 
 auth:

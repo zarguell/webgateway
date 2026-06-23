@@ -57,6 +57,16 @@ services:
     shm_size: 2gb
     restart: unless-stopped
 
+  flaresolverr:
+    profiles: ["local"]
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    ports:
+      - "8191:8191"
+    environment:
+      LOG_LEVEL: info
+      CAPTCHA_SOLVER: none
+    restart: unless-stopped
+
 volumes:
   webgateway-data:
   webgateway-logs:

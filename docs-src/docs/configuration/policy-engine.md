@@ -90,16 +90,16 @@ Every extract response has a `structured_data` field — always present (null wh
 These domains have `json_ld` → `meta_extract` → `article_extract` priority configured:
 
 | Domain | Provider | Notes |
-|---|---|---|
-| `*.imdb.com` | CDP Chrome (default) | Verified — `@type: Movie`, rating, duration, genre |
-| `*.amazon.com`, `*.amazon.*` | invisible_playwright | Stealth browser required |
-| `*.ebay.com` | invisible_playwright | Stealth browser required |
-| `*.etsy.com` | invisible_playwright | Stealth browser required |
-| `*.bestbuy.com` | invisible_playwright | Stealth browser required |
-| `*.walmart.com` | invisible_playwright | Stealth browser required |
+|---|---|---|---|
+| `*.imdb.com` | CDP Chrome (default) | ✅ Verified — `@type: Movie`, rating, duration, genre |
+| `*.amazon.com`, `*.amazon.*` | invisible_playwright | ⚠️ meta_extract works, Product JSON-LD not static |
+| `*.ebay.com` | invisible_playwright | ⚠️ meta_extract works |
+| `*.etsy.com` | flaresolverr | ⚠️ CAPTCHA bypassed, thin JS-rendered content |
+| `*.bestbuy.com` | flaresolverr | ⚠️ CAPTCHA bypassed, thin JS-rendered content |
+| `*.walmart.com` | flaresolverr | ⚠️ CAPTCHA bypassed, thin JS-rendered content |
 | `*.rottentomatoes.com` | invisible_playwright | ✅ Verified — `@type: Movie`, rating, cast, genre |
 | `*.goodreads.com` | invisible_playwright | ✅ Verified — `@type: Book`, ISBN, pages, author |
-| `stackoverflow.com`, `*.stackoverflow.com`, `*.stackexchange.com` | invisible_playwright | Q&A JSON-LD |
+| `stackoverflow.com`, `*.stackoverflow.com`, `*.stackexchange.com` | invisible_playwright | ✅ Verified — Organization structured data |
 
 Add more by adding policy rules with `extract_strategy` to your `config.yaml`.
 
