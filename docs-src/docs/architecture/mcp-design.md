@@ -36,4 +36,40 @@ WebGateway is **infrastructure for intelligent agents**, not a standalone tool. 
 - **Dispatch:** Tools call `GatewayService.search()` / `.extract()` — the same pipeline as the REST API
 - **Returns:** JSON strings (`json_response=True`)
 
+## Extraction strategies
+
+Policy rules can configure per-domain extraction strategies that enrich the extract response with structured data:
+
+```yaml
+policies:
+  - name: imdb
+    match:
+      domain_glob: "*.imdb.com"
+    extract_strategy:
+      priority:
+        - json_ld
+        - meta_extract
+        - article_extract
+```
+
+Strategies are tried in priority order. The first to produce data wins. Strategies **supplement** the content pipeline — they never replace it. The agent always receives:
+
+| Field | Always present? | Description |
+|---|---|---|
+| `content` | ✅ | Full page content extracted by trafilatura as markdown |
+| `format` | ✅ | `"markdown"` by default, `"json"` if requested |
+| `structured_data` | ✅ | JSON object (or null) from the matched strategy — e.g. `@type: Movie`, `aggregateRating`, `genre` |
+
+This means an agent calling `web_extract("https://www.imdb.com/title/tt0111161/")` gets both the full page text AND structured metadata like ratings, runtime, and genre — without any extra parameters.
+
+Available strategies:
+
+| Strategy | What it extracts |
+|---|---|
+| `json_ld` | `<script type="application/ld+json">` blocks, scored by `@type` priority |
+| `meta_extract` | Open Graph, Twitter Card, and standard `<meta>` tags |
+| `article_extract` | Default trafilatura → markdownify pipeline (always the fallback) |
+
+See `src/webgateway/post_processing/strategies/` for implementations and `src/webgateway/post_processing/pipeline.py` for the integration.
+
 See `src/webgateway/mcp/server.py` for the implementation.

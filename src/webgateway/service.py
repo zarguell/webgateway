@@ -822,7 +822,7 @@ class GatewayService:
             quality_warning=not quality_passed,
             post_processing=pp_info,
             prompt_injection=pi_info,
-            structured_data=structured_data if request.format == "json" else None,
+            structured_data=structured_data,
         )
 
         if cache_write and quality_passed:
