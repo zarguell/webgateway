@@ -211,5 +211,11 @@ post_processing:
 prompt_injection:
   enabled: false
 
+# Cache disabled for local dev — avoids stale results during development.
+# Source code changes require `docker compose up -d --build` anyway,
+# and stale cached extracts cause confusing debug sessions.
+cache:
+  enabled: false
+
 llm_judge:
   enabled: false
