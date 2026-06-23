@@ -11,8 +11,23 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY src/ ./src/
 COPY scripts/ ./scripts/
-RUN pip install --no-cache-dir '.[injection]'
-RUN python scripts/fetch_injection_model.py || true
+
+ARG ENABLE_INJECTION=0
+RUN mkdir -p /app/models \
+    && if [ "$ENABLE_INJECTION" = "1" ]; then \
+      pip install --no-cache-dir '.[injection]' \
+      && python scripts/fetch_injection_model.py || true; \
+    else \
+      pip install --no-cache-dir .; \
+    fi
+
+# Strip build-only packages that bloat the runtime image
+RUN pip uninstall -y --no-cache-dir pip setuptools 2>/dev/null || true \
+    && find /usr/local/lib/python3.12/site-packages \
+         -maxdepth 1 -type d \
+       \( -name "pip*" -o -name "setuptools*" -o -name "babel*" \
+       -o -name "pkg_resources" \) \
+       -exec rm -rf {} + 2>/dev/null || true
 
 # ----------
 # MkDocs builder stage
@@ -37,24 +52,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
 RUN groupadd -r webgateway && useradd -r -g webgateway -d /app -s /sbin/nologin webgateway
 
 WORKDIR /app
 
 RUN mkdir -p /app/data /app/logs /app/static /app/models
 
-COPY --from=builder /app/models /app/models
+# COPY --chown avoids creating a duplicate layer (saves ~750MB vs COPY + chown)
+COPY --from=builder --chown=webgateway:webgateway /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder --chown=webgateway:webgateway /usr/local/bin /usr/local/bin
+COPY --from=builder --chown=webgateway:webgateway /app/models /app/models
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-COPY src/ ./src/
+COPY --chown=webgateway:webgateway src/ ./src/
 
 # Copy MkDocs output
 COPY --from=docs-builder /app/static/docs /app/static/docs
-
-RUN chown -R webgateway:webgateway /app
+RUN chown webgateway:webgateway /app/static/docs
 
 USER webgateway
 
