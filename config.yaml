@@ -109,6 +109,13 @@ providers:
   flaresolverr:
     base_url: http://flaresolverr:8191
 
+  # CDP Chrome sidecar — lightweight bridge to host Chrome browser
+  cdp_chrome:
+    base_url: http://cdp-chrome:9222
+    timeout: 30
+    specialization: cdp_browser
+    cost_units_per_call: 0.6
+
   # Managed anti-bot extraction
   zyte:
     api_key: ${ZYTE_API_KEY}
@@ -361,6 +368,10 @@ post_processing:
       stage2_converter: none
       stage3_clean: true
     crawl4ai_md:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: true
+    cdp_chrome:
       stage1_extractor: none
       stage2_converter: none
       stage3_clean: true

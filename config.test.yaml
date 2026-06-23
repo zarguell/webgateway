@@ -87,6 +87,12 @@ providers:
     enabled: true
     specialization: cloudflare
     cost_units_per_call: 0.5
+  cdp_chrome:
+    base_url: http://cdp-chrome:9222
+    timeout: 30
+    enabled: true
+    specialization: cdp_browser
+    cost_units_per_call: 0.6
   zyte:
     api_key: ${ZYTE_API_KEY:-}
     base_url: https://api.zyte.com
@@ -218,6 +224,10 @@ post_processing:
     zyte:
       stage1_extractor: trafilatura
       stage2_converter: markdownify
+      stage3_clean: true
+    cdp_chrome:
+      stage1_extractor: none
+      stage2_converter: none
       stage3_clean: true
 
 llm_judge:
