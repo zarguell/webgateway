@@ -89,12 +89,14 @@ Every extract response has a `structured_data` field — always present (null wh
 
 These domains have `json_ld` → `meta_extract` → `article_extract` priority configured:
 
-- `*.amazon.com`, `*.amazon.*` — Product JSON-LD
-- `*.imdb.com` — Movie/TV JSON-LD
-- `*.ebay.com` — Product JSON-LD
-- `*.etsy.com` — Product JSON-LD
-- `*.bestbuy.com` — Product JSON-LD
-- `*.walmart.com` — Product JSON-LD
+| Domain | Provider | Notes |
+|---|---|---|
+| `*.imdb.com` | CDP Chrome (default) | Verified — `@type: Movie`, rating, duration, genre |
+| `*.amazon.com`, `*.amazon.*` | invisible_playwright | Stealth browser required |
+| `*.ebay.com` | invisible_playwright | Stealth browser required |
+| `*.etsy.com` | invisible_playwright | Stealth browser required |
+| `*.bestbuy.com` | invisible_playwright | Stealth browser required |
+| `*.walmart.com` | invisible_playwright | Stealth browser required |
 
 Add more by adding policy rules with `extract_strategy` to your `config.yaml`.
 

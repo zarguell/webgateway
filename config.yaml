@@ -65,6 +65,8 @@ policies:
       domain_glob:
         - "*.amazon.com"
         - "*.amazon.*"
+    extract_provider: invisible_playwright
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -85,6 +87,8 @@ policies:
     match:
       domain_glob:
         - "*.ebay.com"
+    extract_provider: invisible_playwright
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -95,6 +99,7 @@ policies:
     match:
       domain_glob:
         - "*.etsy.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -105,6 +110,7 @@ policies:
     match:
       domain_glob:
         - "*.bestbuy.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -115,6 +121,7 @@ policies:
     match:
       domain_glob:
         - "*.walmart.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld

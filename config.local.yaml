@@ -18,6 +18,7 @@ policies:
       domain_glob:
         - "*.amazon.com"
         - "*.amazon.*"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -38,6 +39,7 @@ policies:
     match:
       domain_glob:
         - "*.ebay.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -48,6 +50,7 @@ policies:
     match:
       domain_glob:
         - "*.etsy.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -58,6 +61,7 @@ policies:
     match:
       domain_glob:
         - "*.bestbuy.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -68,6 +72,7 @@ policies:
     match:
       domain_glob:
         - "*.walmart.com"
+    extract_provider: invisible_playwright
     extract_strategy:
       priority:
         - json_ld
@@ -84,6 +89,14 @@ providers:
     enabled: true
     specialization: cdp_browser
     cost_units_per_call: 0.6
+  invisible_playwright:
+    base_url: http://invisible-playwright:3001
+    stealth: true
+    engine: firefox
+    firefox_version: "150"
+    cost_units_per_call: 0.8
+    specialization: stealth_primary
+    enabled: true
 
 auth:
   keys:

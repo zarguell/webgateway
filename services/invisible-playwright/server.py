@@ -13,12 +13,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
-import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 logger = logging.getLogger("invisible_playwright")
 
@@ -89,8 +87,6 @@ async def scrape(req: ScrapeRequest):
         except (ValueError, AttributeError):
             seed = abs(hash(req.fingerprint))
 
-    timeout_s = max(req.timeout / 1000.0, 10.0)
-
     try:
         from invisible_playwright.async_api import InvisiblePlaywright
 
@@ -134,24 +130,16 @@ async def scrape(req: ScrapeRequest):
 
             title = await page.title()
 
-            # Extract text content (approximate markdown)
-            content = await page.evaluate(
-                """() => {
-                    const main = document.querySelector('article')
-                        || document.querySelector('[role="main"]')
-                        || document.querySelector('main')
-                        || document.body;
-                    return main.innerText;
-                }"""
-            )
+            # Return raw HTML for the pipeline to process (strategy extraction, trafilatura, etc.)
+            raw_html = await page.content()
 
             return ScrapeResponse(
-                content=content.strip(),
-                format="markdown",
+                content=raw_html,
+                format="html",
                 url=req.url,
                 title=title or None,
             )
 
     except Exception as exc:
         logger.exception("Scrape failed for %s", req.url)
-        raise HTTPException(status_code=502, detail=f"Scrape failed: {exc}")
+        raise HTTPException(status_code=502, detail=f"Scrape failed: {exc}") from exc

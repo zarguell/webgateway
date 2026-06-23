@@ -51,6 +51,12 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  invisible-playwright:
+    profiles: ["local"]
+    build: services/invisible-playwright/
+    shm_size: 2gb
+    restart: unless-stopped
+
 volumes:
   webgateway-data:
   webgateway-logs:
