@@ -75,6 +75,12 @@ class PolicyMatch(BaseModel):
     on_error_class: list[str | int] | None = None
 
 
+class ExtractStrategyConfig(BaseModel):
+    """Configuration for per-domain extraction strategies."""
+
+    priority: list[str] = Field(default_factory=lambda: ["article_extract"])
+
+
 class PolicyRule(BaseModel):
     name: str
     match: PolicyMatch = Field(default_factory=PolicyMatch)
@@ -86,6 +92,7 @@ class PolicyRule(BaseModel):
     retry_strategy: str | None = None
     dlp_policy: str | None = None
     allowed_providers: list[str] | None = None
+    extract_strategy: ExtractStrategyConfig | None = None
 
 
 class ProxyConfig(BaseModel):
