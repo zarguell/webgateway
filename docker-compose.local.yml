@@ -31,6 +31,9 @@ services:
     image: searxng/searxng:latest
     ports:
       - "8081:8080"
+    volumes:
+      - ./searxng-settings.yml:/etc/searxng/settings.yml:ro
+      - ./searxng-limiter.toml:/etc/searxng/limiter.toml:ro
     environment:
       - SEARXNG_SECRET=${SEARXNG_SECRET:-local-secret}
     healthcheck:

@@ -64,7 +64,9 @@ class SearXNGAdapter:
                 timeout=options.timeout,
             ) as client:
                 resp = await client.get(
-                    f"{self._base_url}/search", params=params
+                    f"{self._base_url}/search",
+                    params=params,
+                    headers={"X-Forwarded-For": "127.0.0.1"},
                 )
         except httpx.HTTPError as exc:
             raise ProviderError(
