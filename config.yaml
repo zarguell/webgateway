@@ -60,6 +60,16 @@ policies:
       - crawl4ai
     dlp_policy: no_cloud_health
 
+  - name: amazon-product
+    match:
+      domain_glob:
+        - "*.amazon.com"
+        - "*.amazon.*"
+    extract_strategy:
+      priority:
+        - json_ld
+        - article_extract
+
 # ---------------------------------------------------------------------------
 # Named Proxies — referenced by policy rules above
 # ---------------------------------------------------------------------------

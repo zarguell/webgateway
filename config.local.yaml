@@ -13,6 +13,16 @@ policies:
     extract_provider: cdp_chrome
     description: "Use CDP Chrome for JS-heavy Wikipedia pages"
 
+  - name: amazon-product
+    match:
+      domain_glob:
+        - "*.amazon.com"
+        - "*.amazon.*"
+    extract_strategy:
+      priority:
+        - json_ld
+        - article_extract
+
 providers:
   searxng:
     base_url: http://searxng:8080
