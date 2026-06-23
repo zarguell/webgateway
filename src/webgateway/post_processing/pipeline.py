@@ -9,7 +9,11 @@ from webgateway.injection.types import InjectionDetectionResult
 from webgateway.post_processing.cleaners import clean_markdown
 from webgateway.post_processing.converters import convert_to_markdown
 from webgateway.post_processing.dedup import DedupStore
-from webgateway.post_processing.extractors import extract_main_content
+from webgateway.post_processing.extractors import (
+    _content_has_keywords_early,
+    _title_keywords,
+    extract_main_content,
+)
 from webgateway.post_processing.strategies import StrategySelector
 
 logger = logging.getLogger(__name__)
@@ -91,6 +95,28 @@ class PostProcessingPipeline:
             )
         else:
             extracted, _, used_fallback = content, format, False
+
+        # Stage 1.5: JSON-LD enrichment
+        # When the extractor produced thin/missed content but we found rich
+        # structured data, prepend the JSON-LD as readable markdown.
+        content_is_thin = len(extracted) < self._config.cleaning.min_content_length
+        title_missing = not _content_has_keywords_early(
+            extracted, _title_keywords(content)
+        )
+        if (
+            structured_data
+            and isinstance(structured_data, dict)
+            and format == "html"
+            and (content_is_thin or title_missing)
+        ):
+            from webgateway.post_processing.strategies.json_ld import (
+                flatten_jsonld_to_markdown,
+            )
+
+            jsonld_md = flatten_jsonld_to_markdown(structured_data)
+            if jsonld_md and len(jsonld_md) > 50:
+                extracted = jsonld_md + "\n\n---\n\n" + extracted
+                used_fallback = True
 
         # Stage 2: HTML -> Markdown conversion
         converter = pcfg.stage2_converter

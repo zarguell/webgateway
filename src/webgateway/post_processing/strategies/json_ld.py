@@ -67,7 +67,7 @@ def _score_block(data: dict) -> _ScoredBlock | None:
     return _ScoredBlock(data=data, score=score, type_name=primary)
 
 
-def _flatten_to_markdown(data: dict) -> str:
+def flatten_jsonld_to_markdown(data: dict) -> str:
     """Flatten a JSON-LD block into readable markdown."""
     lines: list[str] = []
     type_name = data.get("@type", "")
@@ -171,7 +171,7 @@ class JsonLdStrategy:
 
         candidates.sort(key=lambda c: c.score, reverse=True)
         best = candidates[0]
-        markdown = _flatten_to_markdown(best.data)
+        markdown = flatten_jsonld_to_markdown(best.data)
 
         return StrategyResult(
             content=markdown,
