@@ -37,7 +37,7 @@ policies:
         - "*.nytimes.com"
         - "*.ft.com"
         - "*.bloomberg.com"
-    extract_provider: playwright
+    extract_provider: invisible_playwright
     playwright_profile: wsj_session
     proxy: residential_us
 
@@ -79,6 +79,10 @@ providers:
   searxng:
     base_url: http://searxng:8080
 
+  # Free web search — no API key, rate-limited by DDG
+  duckduckgo:
+    timeout: 15
+
   # Lightweight read-it extraction (generous free tier)
   jina:
     api_key: ${JINA_API_KEY}
@@ -100,10 +104,6 @@ providers:
   # Agent-optimised search / RAG
   tavily:
     api_key: ${TAVILY_API_KEY}
-
-  # Remote browser via Playwright (separate compose service)
-  playwright:
-    base_url: http://playwright:3000
 
   # Cloudflare challenge solver (separate compose service)
   flaresolverr:
@@ -190,6 +190,7 @@ dlp_policies:
       - brave
       - jina
       - firecrawl
+      - duckduckgo
     outbound_rules:
       - name: "US SSN"
         pattern: '\\b(?!000|666|9\d{2})\d{3}[-.\s]?(?!00)\d{2}[-.\s]?(?!0000)\d{4}\b'

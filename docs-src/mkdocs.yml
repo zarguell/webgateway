@@ -62,3 +62,5 @@ nav:
     - System Design: architecture/overview.md
     - LiteLLM Integration: architecture/litellm.md
     - Docker Compose Profiles: architecture/compose-profiles.md
+  - Development:
+    - Adding a New Provider: development/provider-guide.md

@@ -26,6 +26,8 @@ dependencies = [
     "readability-lxml>=0.8.4",
     "markdownify>=1.2.0",
     "html2text>=2025.0.0",
+    "aiosmtplib>=3.0.0",
+    "ddgs>=9.14.0",
 ]
 
 [project.optional-dependencies]

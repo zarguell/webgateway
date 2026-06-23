@@ -22,6 +22,9 @@ providers:
   searxng:
     base_url: http://searxng:8080
     enabled: true
+  duckduckgo:
+    timeout: 15
+    enabled: true
   jina:
     api_key: ${JINA_API_KEY}
     enabled: true
@@ -78,6 +81,19 @@ providers:
     enabled: true
     specialization: markdown
     cost_units_per_call: 0.3
+  flaresolverr:
+    base_url: http://flaresolverr:8191
+    timeout: 120
+    enabled: true
+    specialization: cloudflare
+    cost_units_per_call: 0.5
+  zyte:
+    api_key: ${ZYTE_API_KEY:-}
+    base_url: https://api.zyte.com
+    timeout: 120
+    enabled: true
+    specialization: extraction
+    cost_units_per_call: 0.8
 
 auth:
   keys:
@@ -194,6 +210,14 @@ post_processing:
     crawl4ai_md:
       stage1_extractor: none
       stage2_converter: none
+      stage3_clean: true
+    flaresolverr:
+      stage1_extractor: trafilatura
+      stage2_converter: markdownify
+      stage3_clean: true
+    zyte:
+      stage1_extractor: trafilatura
+      stage2_converter: markdownify
       stage3_clean: true
 
 llm_judge:

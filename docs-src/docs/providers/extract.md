@@ -14,7 +14,83 @@ Stealth browser based on C++-patched Firefox 150. Undetectable extraction for ha
 
 ## Zyte
 
-Managed anti-bot extraction service. Handles the hardest targets with automatic CAPTCHA solving and IP rotation.
+Cloud extraction service with managed proxy rotation and headless-browser rendering. Handles hard targets with automatic CAPTCHA solving. Requires a `ZYTE_API_KEY` (HTTP Basic Auth).
+
+### Configuration
+
+```yaml
+providers:
+  zyte:
+    api_key: ${ZYTE_API_KEY}
+    base_url: https://api.zyte.com
+    timeout: 120
+```
+
+### Policy Routing
+
+```yaml
+policies:
+  - name: hard_target_extract
+    match:
+      domain_glob: ["*.protected-site.com"]
+    extract_provider: zyte
+```
+
+### API Calls
+
+```bash
+curl -X POST http://localhost:8080/extract \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "provider": "zyte"}'
+```
+
+## FlareSolverr
+
+Self-hosted proxy that bypasses Cloudflare and DDoS-GUARD challenges via headless browser. No API key needed — runs as a Docker sidecar. Extract-only.
+
+### Docker Setup
+
+```yaml
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    ports:
+      - "8191:8191"
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
+```
+
+### Configuration
+
+```yaml
+providers:
+  flaresolverr:
+    base_url: http://flaresolverr:8191
+    timeout: 120
+```
+
+### Policy Routing
+
+Route Cloudflare-protected sites to FlareSolverr:
+
+```yaml
+policies:
+  - name: cloudflare_bypass
+    match:
+      domain_glob: ["*.cloudflare-protected.com"]
+    extract_provider: flaresolverr
+```
+
+### API Calls
+
+```bash
+curl -X POST http://localhost:8080/extract \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "provider": "flaresolverr"}'
+```
 
 ## Crawl4AI
 

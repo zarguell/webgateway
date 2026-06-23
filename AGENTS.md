@@ -46,7 +46,7 @@ Request → Auth → Policy Engine (YAML rules) → DLP outbound → Cache looku
 - `src/webgateway/service.py` — `GatewayService` orchestrates the full pipeline; all DLP/cache/provider integration lives here
 - `src/webgateway/config.py` — Pydantic config models, hot-reloadable via `POST /admin/reload`
 - `src/webgateway/policy/engine.py` — Tier 1 deterministic YAML rule matcher
-- `src/webgateway/providers/` — One file per provider adapter (searxng, jina, brave, tavily, firecrawl)
+- `src/webgateway/providers/` — One file per provider adapter (searxng, jina, brave, tavily, firecrawl, duckduckgo, zyte, flaresolverr, crawl4ai, exa, perplexity, context7, devdocs, invisible_playwright)
 - `src/webgateway/dlp/` — Regex scanner, Luhn validator, outbound/inbound middleware
 - `src/webgateway/cache/` — SQLite cache store, key derivation, TTL rules, quality validator
 - `src/webgateway/routes/` — Thin FastAPI route handlers (search, extract, health, admin, cache)
@@ -81,8 +81,19 @@ Default regex patterns adapted from [Gitleaks](https://github.com/gitleaks/gitle
 
 - Async throughout (`httpx`, `asyncio`). Provider adapters implement `async def search()` and `async def extract()`.
 - Provider adapter protocol: `src/webgateway/providers/base.py` defines `ProviderAdapter`, `SearchOptions`, `ExtractOptions`, `SearchResult`, `ExtractResult`, `ProviderError`.
+- **When implementing a new provider, read `docs-src/docs/development/provider-guide.md` first.** It has the full 12-step checklist — every file to create/modify, code skeleton, test patterns, and config wiring.
 - Audit entries are JSON Lines, one per request, append-only rotating file at `/app/logs/gateway.jsonl`.
 - `request_id` is generated per request (format: `req_` + hex) and passed through the entire pipeline.
+
+## Documentation
+
+- **Always update `docs-src/` when adding or changing features.** The MkDocs site at `docs-src/docs/` is the published documentation. If you add an endpoint, provider, config option, or behavior change, update the relevant page under `docs-src/`.
+- `docs-src/docs/configuration/` — config reference pages (policy engine, DLP, providers, proxy)
+- `docs-src/docs/getting-started/` — first API call, installation, docker compose
+- `docs-src/docs/providers/` — per-provider setup guides
+- `docs-src/docs/development/` — internal guides (provider implementation checklist)
+- `docs-src/docs/operations/` — cache, circuit breaker, monitoring, admin UI
+- `docs-src/docs/api/` — interactive API docs, MCP schema
 
 ## PRD
 

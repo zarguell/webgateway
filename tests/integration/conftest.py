@@ -30,6 +30,8 @@ _RATE_LIMIT_DELAYS: dict[str, float] = {
     "jina": 0.3,       # 200 RPM with key
     "perplexity": 1.2, # Tier 0: 50 RPM
     "exa": 0.1,        # 10 QPS, minimal delay
+    "flaresolverr": 3.0,  # Slow: challenge solving takes 5-30s
+    "duckduckgo": 1.0,    # DDG rate-limits aggressive querying
 }
 
 
@@ -214,3 +216,6 @@ devdocs_available = _make_provider_skip_fixture("devdocs", "DevDocs")
 exa_available = _make_provider_skip_fixture("exa", "Exa")
 crawl4ai_available = _make_provider_skip_fixture("crawl4ai", "Crawl4AI")
 crawl4ai_md_available = _make_provider_skip_fixture("crawl4ai_md", "Crawl4AI MD")
+flaresolverr_available = _make_provider_skip_fixture("flaresolverr", "FlareSolverr")
+zyte_available = _make_provider_skip_fixture("zyte", "Zyte")
+duckduckgo_available = _make_provider_skip_fixture("duckduckgo", "DuckDuckGo")

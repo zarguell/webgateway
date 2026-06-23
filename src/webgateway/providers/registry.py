@@ -16,13 +16,16 @@ from webgateway.providers.brave import BraveSearchAdapter
 from webgateway.providers.context7 import Context7Adapter
 from webgateway.providers.crawl4ai import Crawl4AIAdapter
 from webgateway.providers.devdocs import DevDocsAdapter
+from webgateway.providers.duckduckgo import DuckDuckGoAdapter
 from webgateway.providers.exa import ExaAdapter
 from webgateway.providers.firecrawl import FirecrawlAdapter
+from webgateway.providers.flaresolverr import FlareSolverrAdapter
 from webgateway.providers.invisible_playwright import InvisiblePlaywrightAdapter
 from webgateway.providers.jina import JinaReaderAdapter
 from webgateway.providers.perplexity import PerplexityAdapter
 from webgateway.providers.searxng import SearXNGAdapter
 from webgateway.providers.tavily import TavilyAdapter
+from webgateway.providers.zyte import ZyteAdapter
 
 __all__ = ["ProviderRegistry"]
 
@@ -133,6 +136,16 @@ class ProviderRegistry:
                 api_key=cfg.api_key,
                 timeout=cfg.timeout or 15,
             )
+        if name == "duckduckgo":
+            return DuckDuckGoAdapter(
+                timeout=cfg.timeout or 15,
+            )
+        if name == "zyte":
+            return ZyteAdapter(
+                api_key=cfg.api_key,
+                base_url=cfg.base_url or "https://api.zyte.com",
+                timeout=cfg.timeout or 120,
+            )
         if name == "crawl4ai":
             return Crawl4AIAdapter(
                 base_url=cfg.base_url or "http://crawl4ai:11235",
@@ -146,6 +159,13 @@ class ProviderRegistry:
                 timeout=cfg.timeout or 30,
                 mode="md",
                 api_token=cfg.api_key,
+            )
+        if name == "flaresolverr":
+            return FlareSolverrAdapter(
+                config={
+                    "base_url": cfg.base_url or "http://flaresolverr:8191",
+                    "max_timeout": (cfg.timeout or 60) * 1000,
+                }
             )
 
         logger.warning("Unknown provider type %r — skipping", name)

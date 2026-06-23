@@ -12,6 +12,7 @@ services:
       - TAVILY_API_KEY=${TAVILY_API_KEY:-}
       - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:-}
       - EXA_API_KEY=${EXA_API_KEY:-}
+      - ZYTE_API_KEY=${ZYTE_API_KEY:-}
     depends_on:
       searxng:
         condition: service_healthy
@@ -36,6 +37,19 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+
+  # --- FlareSolverr (Cloudflare challenge solver) ---
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    profiles: ["flaresolverr"]
+    ports:
+      - "8191:8191"
+    environment:
+      LOG_LEVEL: info
+      CAPTCHA_SOLVER: none
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8191/health"]
 
   # --- Crawl4AI self-hosted crawler ---
   crawl4ai:
