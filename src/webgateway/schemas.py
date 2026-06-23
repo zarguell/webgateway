@@ -82,6 +82,7 @@ class ExtractResponse(BaseModel):
     quality_warning: bool = False
     post_processing: PostProcessingInfo | None = None
     prompt_injection: PromptInjectionInfo | None = None
+    structured_data: dict | list | None = None
 
 
 # ---------------------------------------------------------------------------
