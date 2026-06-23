@@ -95,6 +95,13 @@ Default regex patterns adapted from [Gitleaks](https://github.com/gitleaks/gitle
 - `docs-src/docs/operations/` — cache, circuit breaker, monitoring, admin UI
 - `docs-src/docs/api/` — interactive API docs, MCP schema
 
+## Releasing
+
+- Docker images are published to GHCR on git tag push: `git tag v0.1.0 && git push --tags`
+- Workflow builds two images: `latest` (lean, 382MB) and `<tag>-injection` (full, ~1.4GB with ONNX model)
+- Tags follow semver: `vMAJOR.MINOR.PATCH` — no automated tagging, tag manually when ready
+- To build locally with injection: `docker build --build-arg ENABLE_INJECTION=1 -t webgateway .`
+
 ## PRD
 
 - `PRD.md` — Original product requirements (build order in §14)
