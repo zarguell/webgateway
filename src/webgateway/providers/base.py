@@ -59,6 +59,7 @@ class ExtractResult:
     url: str = ""
     title: str | None = None
     status_code: int = 200
+    cookies: list[dict] | None = None
 
 
 # ---------------------------------------------------------------------------

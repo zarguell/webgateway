@@ -118,11 +118,13 @@ class FlareSolverrAdapter:
         solution = data.get("solution") or {}
         html = str(solution.get("response", ""))
         final_url = str(solution.get("url", url))
+        cookies = solution.get("cookies")
 
         return ExtractResult(
             content=html,
             format="html",
             url=final_url,
+            cookies=cookies,
         )
 
     async def health_check(self) -> bool:
