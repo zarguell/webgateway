@@ -25,7 +25,7 @@ RUN mkdir -p /app/models \
 RUN pip uninstall -y --no-cache-dir pip setuptools 2>/dev/null || true \
     && find /usr/local/lib/python3.12/site-packages \
          -maxdepth 1 -type d \
-       \( -name "pip*" -o -name "setuptools*" -o -name "babel*" \
+       \( -name "pip*" -o -name "setuptools*" \
        -o -name "pkg_resources" \) \
        -exec rm -rf {} + 2>/dev/null || true
 

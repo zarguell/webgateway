@@ -70,7 +70,7 @@ async def extract(req: ExtractRequest):
             )
 
             title = await page.title()
-            html = await page.content()
+            raw_html = await page.content()
             await page.close()
 
     except Exception as exc:  # noqa: BLE001 — top-level HTTP endpoint boundary
@@ -80,35 +80,9 @@ async def extract(req: ExtractRequest):
             raise HTTPException(status_code=503, detail="Chrome not connected") from exc
         raise HTTPException(status_code=502, detail=f"Extract failed: {exc}") from exc
 
-    content = _html_to_markdown(html, req.url)
-
     return ExtractResponse(
-        content=content,
-        format="markdown",
+        content=raw_html,
+        format="html",
         url=req.url,
         title=title or None,
     )
-
-
-def _html_to_markdown(html: str, url: str) -> str:
-    import trafilatura
-
-    try:
-        result = trafilatura.extract(
-            html,
-            url=url,
-            output_format="markdown",
-            include_links=True,
-            include_images=False,
-            include_tables=True,
-            no_fallback=False,
-        )
-        if result:
-            return result.strip()
-    except Exception:  # noqa: BLE001 — fallback to raw text extraction
-        logger.warning("trafilatura extraction failed, falling back to raw text")
-
-    import re
-
-    text = re.sub(r"<[^>]+>", "", html)
-    return re.sub(r"\s+", " ", text).strip()

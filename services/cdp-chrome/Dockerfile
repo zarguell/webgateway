@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.description="CDP Chrome sidecar — lightweight b
 RUN apt-get update && apt-get install -y --no-install-recommends socat \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir playwright uvicorn fastapi pydantic trafilatura
+RUN pip install --no-cache-dir playwright uvicorn fastapi pydantic
 
 COPY server.py /app/server.py
 WORKDIR /app

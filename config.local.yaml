@@ -149,8 +149,8 @@ post_processing:
     min_content_length: 200
   providers:
     cdp_chrome:
-      stage1_extractor: none
-      stage2_converter: none
+      stage1_extractor: trafilatura
+      stage2_converter: markdownify
       stage3_clean: true
     searxng:
       stage1_extractor: none

@@ -226,8 +226,8 @@ post_processing:
       stage2_converter: markdownify
       stage3_clean: true
     cdp_chrome:
-      stage1_extractor: none
-      stage2_converter: none
+      stage1_extractor: trafilatura
+      stage2_converter: markdownify
       stage3_clean: true
 
 llm_judge:
