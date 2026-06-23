@@ -56,7 +56,7 @@ RUN groupadd -r webgateway && useradd -r -g webgateway -d /app -s /sbin/nologin 
 
 WORKDIR /app
 
-RUN mkdir -p /app/data /app/logs /app/static /app/models
+RUN mkdir -p /app/data /app/logs /app/static /app/models && chown -R webgateway:webgateway /app/data /app/logs /app/static
 
 # COPY --chown avoids creating a duplicate layer (saves ~750MB vs COPY + chown)
 COPY --from=builder --chown=webgateway:webgateway /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
@@ -69,8 +69,12 @@ COPY --chown=webgateway:webgateway src/ ./src/
 COPY --from=docs-builder /app/static/docs /app/static/docs
 RUN chown webgateway:webgateway /app/static/docs
 
-USER webgateway
+COPY --chown=webgateway:webgateway entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ USER webgateway
 
 EXPOSE 8080
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "webgateway.main:app", "--host", "0.0.0.0", "--port", "8080"]
