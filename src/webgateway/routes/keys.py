@@ -30,7 +30,7 @@ def _get_key_store(request: Request) -> KeyStore:
     return ks
 
 
-@router.get("", response_model=list[KeyInfoResponse])
+@router.get("/list", response_model=list[KeyInfoResponse])
 async def list_keys(
     request: Request,
     key: Annotated[AuthKey, Depends(verify_admin)],

@@ -85,7 +85,7 @@ class TestSessionAdmin:
 
     def test_list_sessions(self, app: TestClient, store: SessionStore):
         store.save(_make_session("sess_list_001"))
-        resp = app.get("/admin/sessions")
+        resp = app.get("/admin/sessions/list")
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)

@@ -75,7 +75,7 @@ async def create_session(
     })
 
 
-@router.get("/admin/sessions", response_model=list[SessionInfoResponse])
+@router.get("/admin/sessions/list", response_model=list[SessionInfoResponse])
 async def list_sessions(
     request: Request,
     key: Annotated[AuthKey, Depends(verify_admin)],
