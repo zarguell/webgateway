@@ -13,6 +13,7 @@ import time
 from webgateway.config import ConfigManager
 from webgateway.providers.base import ProviderAdapter, ProviderMetadata
 from webgateway.providers.brave import BraveSearchAdapter
+from webgateway.providers.cdp_chrome import CdpChromeAdapter
 from webgateway.providers.context7 import Context7Adapter
 from webgateway.providers.crawl4ai import Crawl4AIAdapter
 from webgateway.providers.devdocs import DevDocsAdapter
@@ -165,6 +166,14 @@ class ProviderRegistry:
                 config={
                     "base_url": cfg.base_url or "http://flaresolverr:8191",
                     "max_timeout": (cfg.timeout or 60) * 1000,
+                }
+            )
+
+        if name == "cdp_chrome":
+            return CdpChromeAdapter(
+                config={
+                    "base_url": cfg.base_url or "http://cdp-chrome:9222",
+                    "timeout": cfg.timeout or 30,
                 }
             )
 
