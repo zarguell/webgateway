@@ -261,6 +261,26 @@ class CacheConfig(BaseModel):
     rules: list[CacheTTLRule] = Field(default_factory=list)
 
 
+class RateLimitByKey(BaseModel):
+    """Per-key rate limit configuration."""
+    requests: int = 60
+    window_seconds: int = 60
+
+
+class RateLimitByIP(BaseModel):
+    """Per-IP rate limit configuration."""
+    requests: int = 30
+    window_seconds: int = 60
+
+
+class RateLimitConfig(BaseModel):
+    """Sliding window rate limiting configuration."""
+    enabled: bool = False
+    by_key: RateLimitByKey = Field(default_factory=RateLimitByKey)
+    by_ip: RateLimitByIP = Field(default_factory=RateLimitByIP)
+    cleanup_interval_seconds: int = 300
+
+
 class CircuitBreakerProviderConfig(BaseModel):
     error_threshold: int = 5
     window_seconds: int = 60
@@ -457,6 +477,7 @@ class GatewayConfig(BaseModel):
     circuit_breaker: CircuitBreakerConfig = Field(default_factory=CircuitBreakerConfig)
     quotas: QuotasConfig = Field(default_factory=QuotasConfig)
     alerts: AlertConfig = Field(default_factory=AlertConfig)
+    rate_limiting: RateLimitConfig = Field(default_factory=RateLimitConfig)
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     post_processing: PostProcessingConfig = Field(default_factory=PostProcessingConfig)
     prompt_injection: PromptInjectionConfig = Field(default_factory=PromptInjectionConfig)
