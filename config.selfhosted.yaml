@@ -62,11 +62,11 @@ providers:
 auth:
   keys:
     - id: key_agent1
-      secret: change-me-in-production
-      label: "Primary agent"
+      secret: <agent-key-change-me>
+      label: Agent API key
     - id: key_admin
-      secret: change-me-in-production
-      label: "Admin"
+      secret: <admin-key-change-me>
+      label: Admin API key
       admin: true
 
 logging:

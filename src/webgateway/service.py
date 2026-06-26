@@ -450,6 +450,19 @@ class GatewayService:
                 request_id=request_id,
             )
 
+        # --- SSRF check: validate the URL before any provider dispatch ---
+        from webgateway.security.url_validator import validate_url
+
+        try:
+            validate_url(str(request.url))
+        except ValueError as exc:
+            raise ProviderError(
+                provider="gateway",
+                status_code=400,
+                error_class="bad_request",
+                message=str(exc),
+            ) from exc
+
         start = time.perf_counter()
 
         dlp_outcome = None

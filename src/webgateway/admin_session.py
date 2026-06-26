@@ -9,8 +9,11 @@ The signing secret comes from the ``ADMIN_SESSION_SECRET`` environment variable.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
 import os
+import time
 from datetime import timedelta
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
@@ -20,6 +23,7 @@ __all__ = ["AdminSession", "AdminSessionManager"]
 logger = logging.getLogger(__name__)
 
 _SESSION_TTL = timedelta(hours=24)
+_CSRF_TOKEN_TTL_SECONDS = 3600  # 1 hour
 _DEFAULT_SECRET_VAR = "ADMIN_SESSION_SECRET"
 _COOKIE_NAME = "admin_session"
 _COOKIE_PATH = "/admin"
@@ -53,6 +57,7 @@ class AdminSessionManager:
             )
             import secrets
             resolved = secrets.token_urlsafe(32)
+        self._signing_key = resolved
         self._serializer = URLSafeTimedSerializer(
             resolved, salt="admin-session"
         )
@@ -100,3 +105,42 @@ class AdminSessionManager:
     @property
     def cookie_max_age(self) -> int:
         return int(_SESSION_TTL.total_seconds())
+
+    # ------------------------------------------------------------------
+    # CSRF token methods
+    # ------------------------------------------------------------------
+
+    def generate_csrf_token(self, session_cookie: str) -> str:
+        """Generate a signed CSRF token tied to the admin session.
+
+        The token is an HMAC-SHA256 of the session cookie value + timestamp,
+        preventing reuse after expiry.
+        """
+        expires = str(int(time.time()) + _CSRF_TOKEN_TTL_SECONDS)
+        msg = f"{session_cookie}:{expires}"
+        sig = hmac.new(
+            self._signing_key.encode(),
+            msg.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+        return f"{expires}.{sig}"
+
+    def verify_csrf_token(self, session_cookie: str, token: str) -> bool:
+        """Verify a CSRF token is valid and not expired.
+
+        Returns True if the token matches and is within the TTL window.
+        """
+        try:
+            expires_ts_str, sig = token.split(".", 1)
+            expires = int(expires_ts_str)
+        except (ValueError, IndexError):
+            return False
+        if time.time() > expires:
+            return False
+        msg = f"{session_cookie}:{expires_ts_str}"
+        expected = hmac.new(
+            self._signing_key.encode(),
+            msg.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+        return hmac.compare_digest(sig, expected)

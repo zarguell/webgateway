@@ -1,17 +1,17 @@
 # Local development config — minimal stack
-# Uses only SearXNG (search) and CDP Chrome (extract)
+# Uses SearXNG (search) and Crawl4AI (extract with JS rendering)
 
 defaults:
   search_provider: searxng
-  extract_provider: cdp_chrome
-  timeout: 15
+  extract_provider: crawl4ai
+  timeout: 30
 
 policies:
   - name: wikipedia
     match:
       domain: "*.wikipedia.org"
-    extract_provider: cdp_chrome
-    description: "Use CDP Chrome for JS-heavy Wikipedia pages"
+    extract_provider: crawl4ai
+    description: "Use Crawl4AI for JS-heavy Wikipedia pages"
 
   - name: amazon-product
     match:
@@ -136,6 +136,16 @@ providers:
     base_url: http://flaresolverr:8191
     enabled: true
 
+  crawl4ai:
+    base_url: http://crawl4ai:11235
+    timeout: 60
+    enabled: true
+
+  crawl4ai_md:
+    base_url: http://crawl4ai:11235
+    timeout: 30
+    enabled: true
+
 auth:
   keys:
     - id: key_agent1
@@ -190,6 +200,15 @@ circuit_breaker:
 quotas: {}
 alerts: {}
 
+rate_limiting:
+  enabled: true
+  by_key:
+    requests: 5
+    window_seconds: 10
+  by_ip:
+    requests: 10
+    window_seconds: 60
+
 post_processing:
   default:
     stage1_extractor: trafilatura
@@ -199,6 +218,14 @@ post_processing:
   cleaning:
     min_content_length: 200
   providers:
+    crawl4ai:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: false
+    crawl4ai_md:
+      stage1_extractor: none
+      stage2_converter: none
+      stage3_clean: false
     cdp_chrome:
       stage1_extractor: trafilatura
       stage2_converter: markdownify

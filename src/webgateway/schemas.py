@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 # ---------------------------------------------------------------------------
 # Cache control (request-level override)
@@ -59,7 +59,7 @@ class SearchResponse(BaseModel):
 
 
 class ExtractRequest(BaseModel):
-    url: str
+    url: HttpUrl
     format: str = "markdown"
     provider: str | None = None
     policy_override: dict | None = None

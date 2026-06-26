@@ -44,12 +44,13 @@
           </td>
           <td class="px-4 py-3 text-sm space-x-2">
             <button hx-post="/admin/sessions/{{ s.session_id }}/refresh"
+                    hx-vals='{"csrf_token": "{{ csrf_token }}"}'
                     hx-target="closest tr" hx-swap="outerHTML"
                     class="text-blue-600 hover:text-blue-800 text-xs font-medium">
               Refresh
             </button>
             <button hx-post="/admin/sessions/invalidate"
-                    hx-vals='{"session_id": "{{ s.session_id }}"}'
+                    hx-vals='{"session_id": "{{ s.session_id }}", "csrf_token": "{{ csrf_token }}"}'
                     hx-confirm="Invalidate session {{ s.session_id[:16] }}...?"
                     hx-target="closest tr" hx-swap="outerHTML"
                     class="text-red-600 hover:text-red-800 text-xs font-medium">

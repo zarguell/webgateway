@@ -186,6 +186,16 @@ circuit_breaker:
       trip_on: ["429", "503", "timeout"]
 
 quotas: {}
+
+rate_limiting:
+  enabled: true
+  by_key:
+    requests: 5
+    window_seconds: 10
+  by_ip:
+    requests: 10
+    window_seconds: 60
+
 alerts: {}
 
 post_processing:

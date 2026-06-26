@@ -55,7 +55,7 @@
           <td class="px-4 py-3 text-sm space-x-2">
             {% if p.circuit_state == 'open' or p.circuit_state == 'half_open' %}
             <button hx-post="/admin/circuit/reset"
-                    hx-vals='{"provider": "{{ p.name }}"}'
+                    hx-vals='{"provider": "{{ p.name }}", "csrf_token": "{{ csrf_token }}"}'
                     hx-target="closest tr" hx-swap="outerHTML"
                     class="text-blue-600 hover:text-blue-800 text-xs font-medium">
               Reset Circuit

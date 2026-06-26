@@ -10,6 +10,7 @@ Run with::
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -31,6 +32,7 @@ from webgateway.injection.types import InjectionBlockedError
 from webgateway.judge import LLMJudge
 from webgateway.key_store import KeyStore
 from webgateway.mcp.server import mount_mcp
+from webgateway.middleware.security_headers import SecurityHeadersMiddleware
 from webgateway.policy.engine import PolicyEngine
 from webgateway.post_processing.dedup import DedupStore
 from webgateway.post_processing.pipeline import PostProcessingPipeline
@@ -40,6 +42,8 @@ from webgateway.post_processing.strategies.meta_extract import MetaExtractStrate
 from webgateway.providers.base import ProviderError
 from webgateway.providers.registry import ProviderRegistry
 from webgateway.proxy import ProxyResolver
+from webgateway.ratelimit.limiter import SlidingWindowRateLimiter
+from webgateway.ratelimit.middleware import RateLimitMiddleware
 from webgateway.resource_manager import ProviderResourceManager
 from webgateway.routes.admin import router as admin_router
 from webgateway.routes.admin_ui import router as admin_ui_router
@@ -53,6 +57,36 @@ from webgateway.routes.sessions_admin import router as sessions_admin_router
 from webgateway.service import GatewayService
 from webgateway.sessions.manager import SessionError, SessionManager
 from webgateway.sessions.store import SessionStore
+
+logger = logging.getLogger(__name__)
+
+_KNOWN_DEFAULT_SECRETS: set[str] = {
+    "change-me-in-production",
+    "local-agent-key",
+    "local-admin-key",
+    "test-agent-key",
+    "test-admin-key",
+}
+
+
+def _check_known_default_secrets(config_manager: ConfigManager) -> None:
+    """Warn if any configured auth key uses a known-default secret value."""
+    for key in config_manager.config.auth.keys:
+        if key.secret in _KNOWN_DEFAULT_SECRETS:
+            logger.warning(
+                "KNOWN-DEFAULT CREDENTIAL DETECTED: auth key %r uses secret %r. "
+                "This is a development/test credential. "
+                "Generate a real secret with: openssl rand -hex 32",
+                key.id,
+                key.secret,
+            )
+    bootstrap = os.environ.get("BOOTSTRAP_ADMIN_KEY", "")
+    if bootstrap in _KNOWN_DEFAULT_SECRETS:
+        logger.warning(
+            "KNOWN-DEFAULT BOOTSTRAP KEY: BOOTSTRAP_ADMIN_KEY uses %r. "
+            "Set a real value in production.",
+            bootstrap,
+        )
 
 
 @asynccontextmanager
@@ -68,6 +102,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     config_path = os.environ.get("CONFIG_PATH", "config.yaml")
     config_manager = ConfigManager(config_path)
     app.state.config_manager = config_manager
+    _check_known_default_secrets(config_manager)
+
+    # --- Rate limiting ---
+    rate_limiter = SlidingWindowRateLimiter(config_manager.config.rate_limiting)
+    app.state.rate_limiter = rate_limiter
+    await rate_limiter.start_background_cleanup()
 
     policy_engine = PolicyEngine(config_manager)
     app.state.policy_engine = policy_engine
@@ -189,6 +229,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     else:
         yield
 
+    # Cleanup rate limiter background task
+    if hasattr(app.state, "rate_limiter"):
+        await app.state.rate_limiter.stop_background_cleanup()
+
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
@@ -230,6 +274,11 @@ def create_app() -> FastAPI:
     app.include_router(sessions_admin_router)
     app.include_router(keys_router)
     app.include_router(admin_ui_router)
+
+    # Rate limiting middleware must be added before SecurityHeadersMiddleware
+    # so rate-limit 429 responses get the security headers too.
+    app.add_middleware(RateLimitMiddleware, fastapi_app=app)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     # --- Exception handlers ---
     @app.exception_handler(ProviderError)

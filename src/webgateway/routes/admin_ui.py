@@ -85,10 +85,24 @@ def _require_admin_session(
 
 def _get_common_context(request: Request) -> dict:
     """Return common template variables."""
+    mgr = _get_session_manager(request)
+    session_cookie = request.cookies.get(mgr.cookie_name, "")
+    csrf_token = mgr.generate_csrf_token(session_cookie) if session_cookie else ""
     return {
         "request": request,
         "session": getattr(request.state, "admin_session", None),
+        "csrf_token": csrf_token,
     }
+
+
+def _verify_csrf(
+    mgr: AdminSessionManager, session_cookie: str | None, csrf_token: str
+) -> None:
+    """Validate CSRF token. Raises HTTPException(403) on failure."""
+    if not session_cookie:
+        raise HTTPException(status_code=403, detail="No admin session")
+    if not mgr.verify_csrf_token(session_cookie, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or expired CSRF token")
 
 
 # ---------------------------------------------------------------------------
@@ -111,12 +125,18 @@ async def login_form(
 async def login_submit(
     request: Request,
     api_key: str = Form(...),
+    csrf_token: str = Form(default=""),
 ):
     """Validate an admin API key and issue a session cookie.
 
     Accepts: config-based keys with ``admin: true``, SQLite-backed keys
     with ``role: admin``, and the bootstrap key (when applicable).
     """
+    # CSRF check
+    mgr_csrf = _get_session_manager(request)
+    session_cookie = request.cookies.get(mgr_csrf.cookie_name, "")
+    _verify_csrf(mgr_csrf, session_cookie, csrf_token)
+
     from webgateway.auth import _find_key
 
     key = _find_key(api_key, request)

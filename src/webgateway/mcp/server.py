@@ -17,11 +17,11 @@ import json
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from webgateway.config import ConfigManager
+from webgateway.config import AuthKey, ConfigManager
 from webgateway.dlp import DlpBlockedError
+from webgateway.key_store import KeyStore
 from webgateway.providers.base import ProviderError
 from webgateway.schemas import (
     ExtractRequest,
@@ -72,16 +72,26 @@ def _error_json(exc: Exception) -> str:
 class McpAuthMiddleware(BaseHTTPMiddleware):
     """Validates Bearer tokens on MCP endpoint requests.
 
-    Uses the same ``ConfigManager.find_auth_key()`` as the REST auth
-    dependencies. On success, sets the ``mcp_api_key_id`` contextvar
-    so tool functions can include the key ID in the audit trail.
+    Uses multi-source key resolution matching REST auth:
+    1. Config-based keys (legacy ``auth.keys`` in config.yaml)
+    2. SQLite-backed keys (KeyStore)
+    3. Bootstrap key (env var, only when admin keys table is empty)
+
+    On success, sets the ``mcp_api_key_id`` contextvar so tool functions
+    can include the key ID in the audit trail.
     """
 
-    def __init__(self, app, config_manager: ConfigManager) -> None:
+    def __init__(
+        self,
+        app,
+        config_manager: ConfigManager,
+        key_store: KeyStore | None = None,
+    ) -> None:
         super().__init__(app)
         self._config_manager = config_manager
+        self._key_store = key_store
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request, call_next):
         header = request.headers.get("Authorization", "")
         parts = header.split(" ", 1)
         if len(parts) != 2 or parts[0].lower() != "bearer":
@@ -90,7 +100,8 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
                 content={"error": "Invalid or missing API key"},
             )
         token = parts[1].strip()
-        key = self._config_manager.find_auth_key(token)
+
+        key = self._find_key(token)
         if key is None:
             return JSONResponse(
                 status_code=401,
@@ -101,6 +112,45 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         finally:
             mcp_api_key_id.reset(ctx_token)
+
+    def _find_key(self, token: str):
+        """Check all auth sources in priority order."""
+        # 1. Config-based keys
+        key = self._config_manager.find_auth_key(token)
+        if key is not None:
+            return key
+
+        # 2. SQLite-backed keys
+        if self._key_store is not None:
+            stored = self._key_store.verify_key(token)
+            if stored is not None:
+                return AuthKey(
+                    id=stored.id,
+                    secret=token,
+                    label=stored.label,
+                    admin=stored.is_admin,
+                )
+
+        # 3. Bootstrap key
+        return self._check_bootstrap_key(token)
+
+    def _check_bootstrap_key(self, token: str):
+        """Bootstrap admin key (valid only when api_keys table is empty)."""
+        import os
+
+        bootstrap_secret = os.environ.get("BOOTSTRAP_ADMIN_KEY")
+        if not bootstrap_secret:
+            return None
+        if token != bootstrap_secret:
+            return None
+        if self._key_store is not None and self._key_store.count_active_admin_keys() > 0:
+            return None
+        return AuthKey(
+            id="bootstrap",
+            secret=bootstrap_secret,
+            label="Bootstrap admin key",
+            admin=True,
+        )
 
 
 async def execute_web_search(
@@ -257,7 +307,12 @@ def mount_mcp(
 
     mcp_server = create_mcp_server(gateway_service)
     mcp_app = mcp_server.streamable_http_app()
-    mcp_app.add_middleware(McpAuthMiddleware, config_manager=config_manager)
+    key_store: KeyStore | None = getattr(app.state, "key_store", None)
+    mcp_app.add_middleware(
+        McpAuthMiddleware,
+        config_manager=config_manager,
+        key_store=key_store,
+    )
     app.mount(mcp_config.mount_path, mcp_app)
     app.state.mcp_server = mcp_server
     return mcp_server.session_manager.run()

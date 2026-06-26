@@ -19,6 +19,7 @@ stealth:          # Stealth browser settings
 cache:            # Response cache configuration
 circuit_breaker:  # Per-provider failure thresholds
 quotas:           # Usage limits per provider
+rate_limiting:    # Sliding window rate limiting
 alerts:           # Webhook alerting
 mcp:              # MCP server settings
 post_processing:  # Content cleaning pipeline
@@ -53,3 +54,38 @@ providers:
 ```
 
 Provider config values support `${ENV_VAR}` and `${ENV_VAR:-default}` syntax.
+
+### rate_limiting
+
+Sliding window rate limiting for search and extract endpoints.
+
+```yaml
+rate_limiting:
+  enabled: true
+  by_key:
+    requests: 60
+    window_seconds: 60
+  by_ip:
+    requests: 30
+    window_seconds: 60
+  cleanup_interval_seconds: 300
+```
+
+- `enabled`: Set to `true` to activate rate limiting (default: `false`).
+- `by_key.requests`: Max requests per API key in the sliding window.
+- `by_key.window_seconds`: Width of the sliding window in seconds.
+- `by_ip.requests`: Max requests per client IP in the sliding window.
+- `cleanup_interval_seconds`: How often stale tracking buckets are pruned.
+
+### SSRF Protection (always active)
+
+User-supplied URLs in `POST /extract` are validated for SSRF safety before any
+provider dispatch. The validator:
+
+- Rejects non-http/https schemes (file://, ftp://, data:, etc.)
+- Blocks hostnames that resolve to private/reserved IP ranges (RFC 1918,
+  loopback, link-local, carrier-grade NAT)
+- Blocks known metadata endpoints (AWS/GCP internal hostnames)
+- Uses `HttpUrl` pydantic validation for URL format
+
+This protection is always active and does not require configuration.
