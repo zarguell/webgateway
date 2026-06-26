@@ -40,6 +40,8 @@ from webgateway.post_processing.strategies.meta_extract import MetaExtractStrate
 from webgateway.providers.base import ProviderError
 from webgateway.providers.registry import ProviderRegistry
 from webgateway.proxy import ProxyResolver
+from webgateway.ratelimit.limiter import SlidingWindowRateLimiter
+from webgateway.ratelimit.middleware import RateLimitMiddleware
 from webgateway.resource_manager import ProviderResourceManager
 from webgateway.routes.admin import router as admin_router
 from webgateway.routes.admin_ui import router as admin_ui_router
@@ -68,6 +70,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     config_path = os.environ.get("CONFIG_PATH", "config.yaml")
     config_manager = ConfigManager(config_path)
     app.state.config_manager = config_manager
+
+    # --- Rate limiting (background bucket cleanup) ---
+    rate_limiter = SlidingWindowRateLimiter(config_manager.config.rate_limiting)
+    app.state.rate_limiter = rate_limiter
+    await rate_limiter.start_background_cleanup()
 
     policy_engine = PolicyEngine(config_manager)
     app.state.policy_engine = policy_engine
@@ -189,6 +196,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     else:
         yield
 
+    # Cleanup rate limiter background task
+    if hasattr(app.state, "rate_limiter"):
+        await app.state.rate_limiter.stop_background_cleanup()
+
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
@@ -230,6 +241,9 @@ def create_app() -> FastAPI:
     app.include_router(sessions_admin_router)
     app.include_router(keys_router)
     app.include_router(admin_ui_router)
+
+    # --- Rate limiting middleware ---
+    app.add_middleware(RateLimitMiddleware)
 
     # --- Exception handlers ---
     @app.exception_handler(ProviderError)
