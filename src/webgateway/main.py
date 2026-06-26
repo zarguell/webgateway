@@ -43,7 +43,7 @@ from webgateway.providers.base import ProviderError
 from webgateway.providers.registry import ProviderRegistry
 from webgateway.proxy import ProxyResolver
 from webgateway.ratelimit.limiter import SlidingWindowRateLimiter
-from webgateway.ratelimit.middleware import RateLimitMiddleware
+from webgateway.ratelimit.middleware import activate_rate_limiting
 from webgateway.resource_manager import ProviderResourceManager
 from webgateway.routes.admin import router as admin_router
 from webgateway.routes.admin_ui import router as admin_ui_router
@@ -104,10 +104,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.config_manager = config_manager
     _check_known_default_secrets(config_manager)
 
-    # --- Rate limiting (background bucket cleanup) ---
+    # --- Rate limiting ---
     rate_limiter = SlidingWindowRateLimiter(config_manager.config.rate_limiting)
     app.state.rate_limiter = rate_limiter
     await rate_limiter.start_background_cleanup()
+    activate_rate_limiting(app)
 
     policy_engine = PolicyEngine(config_manager)
     app.state.policy_engine = policy_engine
@@ -275,8 +276,7 @@ def create_app() -> FastAPI:
     app.include_router(keys_router)
     app.include_router(admin_ui_router)
 
-    # --- Rate limiting middleware ---
-    app.add_middleware(RateLimitMiddleware)
+
 
     # --- Security headers ---
     app.add_middleware(SecurityHeadersMiddleware)
