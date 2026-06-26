@@ -1,0 +1,53 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime
+logs/
+sessions/
+data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenCode
+.omo/
+.playwright-mcp/
+
+# Docs (rebuilt in docs-builder stage)
+docs-src/
+docs/
+PRD.md
+PRD-addendum*.md
+
+# Build
+dist/
+*.egg-info/
+
+# Config files that should not be baked in
+config.local.yaml
+config.selfhosted.yaml
+docker-compose*.yml
