@@ -21,8 +21,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     """Sliding-window rate limiting for search/extract endpoints.
 
     Accepts the ``FastAPI`` app instance via the ``fastapi_app`` keyword
-    argument so it can read ``app.state.rate_limiter`` and
-    ``app.state.config_manager.config.rate_limiting`` at request time.
+    argument so it can read ``app.state.rate_limiter`` and config at request
+    time without relying on ``request.app`` resolution.
     """
 
     def __init__(self, app, *, fastapi_app: FastAPI) -> None:
@@ -30,18 +30,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self._fastapi_app = fastapi_app
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        import sys
-        print("=== RATE LIMIT DISPATCH CALLED ===", file=sys.stderr)
         limiter: SlidingWindowRateLimiter | None = getattr(
             self._fastapi_app.state, "rate_limiter", None
         )
         if limiter is None:
-            print("=== rate_limiter is None ===", file=sys.stderr)
-            return await call_next(request)
-
-        config = self._fastapi_app.state.config_manager.config.rate_limiting
-        if not config.enabled:
-            print("=== rate limiting not enabled ===", file=sys.stderr)
             return await call_next(request)
 
         config = self._fastapi_app.state.config_manager.config.rate_limiting
@@ -60,7 +52,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             config.by_ip.window_seconds,
         ))
 
-        api_key_id: str | None = getattr(request.state, "api_key_id", None)
+        # Parse the Bearer token directly so per-key limiting works even though
+        # the FastAPI auth dependency runs inside the route handler (after this
+        # middleware). This duplicates auth parsing but avoids the ordering
+        # dependency.
+        api_key_id = self._extract_api_key_id(request)
         if api_key_id:
             checks.append((
                 f"key:{api_key_id}",
@@ -84,3 +80,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
         return await call_next(request)
+
+    @staticmethod
+    def _extract_api_key_id(request: Request) -> str | None:
+        """Extract the API key ID from the Authorization header.
+
+        Checks the Bearer token against the app's configured keys without
+        requiring the FastAPI auth dependency to have run first.
+        """
+        header = request.headers.get("Authorization", "")
+        parts = header.split(" ", 1)
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            return None
+        token = parts[1].strip()
+        if not token:
+            return None
+
+        config_manager = request.app.state.config_manager
+        key = config_manager.find_auth_key(token)
+        if key is not None:
+            return key.id
+        return None
