@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.post_processing.strategies.json_ld import (
+from serp_llm.post_processing.strategies.json_ld import (
     JsonLdStrategy,
     _extract_name,
     _format_iso8601_duration,
-    flatten_jsonld_to_markdown,
 )
-from webgateway.post_processing.strategies.meta_extract import MetaExtractStrategy
+from serp_llm.post_processing.strategies.meta_extract import MetaExtractStrategy
 
 
 @pytest.fixture

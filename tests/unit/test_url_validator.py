@@ -2,7 +2,7 @@
 
 import pytest
 
-from webgateway.security.url_validator import (
+from serp_llm.security.url_validator import (
     UrlValidationError,
     is_safe_url,
     validate_url,

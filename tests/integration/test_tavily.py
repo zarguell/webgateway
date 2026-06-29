@@ -1,4 +1,4 @@
-"""Integration tests for Tavily search + extract through the WebGateway.
+"""Integration tests for Tavily search + extract through the serpLLM.
 
 These tests make real requests to the Tavily API (api.tavily.com).
 They auto-skip when Tavily isn't healthy on the gateway (no API key,

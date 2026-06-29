@@ -1,12 +1,12 @@
-# Local Development: Using WebGateway for Your Own Research
+# Local Development: Using serpLLM for Your Own Research
 
 ## Overview
 
-WebGateway can run locally with your system Chrome browser as the extraction engine and SearXNG as the search backend. No cloud API keys needed. Just Docker, Docker Compose, and Chrome.
+serpLLM can run locally with your system Chrome browser as the extraction engine and SearXNG as the search backend. No cloud API keys needed. Just Docker, Docker Compose, and Chrome.
 
 The local stack is a lightweight 3-service setup:
 
-- **WebGateway** at `localhost:8080` — the core gateway
+- **serpLLM** at `localhost:8080` — the core gateway
 - **SearXNG** at `localhost:8081` — self-hosted metasearch engine
 - **CDP Chrome sidecar** at `localhost:9222` — bridges Docker to your host Chrome via Chrome DevTools Protocol
 
@@ -21,7 +21,7 @@ Your AI agent connects to the gateway through MCP, giving it `web_search` and `w
 │                      Your Machine                        │
 │                                                          │
 │  ┌──────────┐     MCP     ┌──────────────┐              │
-│  │ AI Agent │◄───────────►│  WebGateway  │              │
+│  │ AI Agent │◄───────────►│  serpLLM  │              │
 │  │ (OpenCode│             │  localhost:8080             │
 │  │ , Claude │             │              │              │
 │  │ , etc.)  │             └──────┬───────┘              │
@@ -47,14 +47,14 @@ Your AI agent connects to the gateway through MCP, giving it `web_search` and `w
 **Data flow for an extract request:**
 
 1. AI agent calls `web_extract` via MCP
-2. WebGateway matches a policy rule for the target URL
+2. serpLLM matches a policy rule for the target URL
 3. The gateway dispatches to the `cdp_chrome` provider
 4. The CDP Chrome sidecar forwards the request to the host Chrome's debugging endpoint at `localhost:9222`
 5. Chrome loads the page and returns the rendered HTML
 6. The sidecar converts HTML to markdown and sends it back through the gateway
 7. The gateway applies DLP, caching, and post-processing before returning the result
 
-For search requests, the flow is simpler: WebGateway routes to SearXNG, which aggregates results from multiple public search engines.
+For search requests, the flow is simpler: serpLLM routes to SearXNG, which aggregates results from multiple public search engines.
 
 ---
 
@@ -123,13 +123,13 @@ The stack is defined in `docker-compose.local.yml`:
 
 | Service | Role | Port | Image |
 |---|---|---|---|
-| webgateway | Core gateway | 8080 | Built from `.` |
+| serpllm | Core gateway | 8080 | Built from `.` |
 | searxng | Search engine | 8081 | `searxng/searxng` |
 | cdp-chrome | Chrome CDP bridge | 9222 | Built from `services/cdp-chrome/` |
 
-- **webgateway** — The main FastAPI application. Built from the current directory. Routes search requests to SearXNG, extract requests to the CDP Chrome sidecar.
+- **serpllm** — The main FastAPI application. Built from the current directory. Routes search requests to SearXNG, extract requests to the CDP Chrome sidecar.
 - **searxng** — A self-hosted metasearch engine that aggregates results from Google, Bing, DuckDuckGo, and other public search engines. No API keys required.
-- **cdp-chrome** — A lightweight Python service that acts as a bridge between WebGateway and your host Chrome. It takes a URL from the gateway, opens it in Chrome via CDP, extracts the rendered content, converts it to markdown, and returns it. The Dockerfile lives in `services/cdp-chrome/`.
+- **cdp-chrome** — A lightweight Python service that acts as a bridge between serpLLM and your host Chrome. It takes a URL from the gateway, opens it in Chrome via CDP, extracts the rendered content, converts it to markdown, and returns it. The Dockerfile lives in `services/cdp-chrome/`.
 
 ---
 
@@ -164,14 +164,14 @@ mcp:
 
 ## Wiring MCP
 
-WebGateway exposes an MCP endpoint at `http://localhost:8080/mcp`. Configure your AI agent to connect to it:
+serpLLM exposes an MCP endpoint at `http://localhost:8080/mcp`. Configure your AI agent to connect to it:
 
 ### OpenCode (`opencode.json`)
 
 ```yaml
 mcp:
   servers:
-    webgateway:
+    serpllm:
       url: http://localhost:8080/mcp
 ```
 
@@ -180,7 +180,7 @@ mcp:
 ```json
 {
   "mcpServers": {
-    "webgateway": {
+    "serpllm": {
       "url": "http://localhost:8080/mcp"
     }
   }
@@ -192,7 +192,7 @@ mcp:
 ```json
 {
   "mcpServers": {
-    "webgateway": {
+    "serpllm": {
       "url": "http://localhost:8080/mcp"
     }
   }
@@ -215,7 +215,7 @@ No API key configuration needed inside the agent. All routing happens at the gat
 | "Chrome not connected" (503) | Chrome not running with CDP | Run `./scripts/launch-chrome-cdp.sh` |
 | Connection refused on port 9222 | Sidecar can't reach host Chrome | Ensure `host.docker.internal` resolves. macOS: Docker Desktop handles this. Linux: add `--add-host=host.docker.internal:host-gateway` to Docker Compose |
 | Empty content from extract | Page blocked by bot detection | CDP Chrome has no stealth features. Try `invisible_playwright` for protected pages |
-| Port 8080 already in use | Another webgateway instance running | Stop it with `docker compose -f docker-compose.local.yml down` or change the port mapping |
+| Port 8080 already in use | Another serpllm instance running | Stop it with `docker compose -f docker-compose.local.yml down` or change the port mapping |
 | Search returns no results | SearXNG still starting up | SearXNG takes 10-30 seconds on first boot. Wait and retry |
 | Chrome window visible but no response | Chrome is on a different display (Linux/Wayland) | Set `DISPLAY=:0` or use Xvfb in the launch script |
 
@@ -241,7 +241,7 @@ policies:
 **Monitor with logs.** Tail the gateway logs to see what's happening:
 
 ```bash
-docker compose -f docker-compose.local.yml logs -f webgateway
+docker compose -f docker-compose.local.yml logs -f serpllm
 ```
 
 **Cache frequently accessed pages.** Set TTL rules in your policy to cache common sources:

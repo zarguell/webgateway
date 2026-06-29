@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from webgateway.config import RateLimitConfig
-from webgateway.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
+from serp_llm.config import RateLimitConfig
+from serp_llm.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
 
 
 @pytest.fixture()

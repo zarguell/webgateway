@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from webgateway.injection.exemptions import is_exempt
+from serp_llm.injection.exemptions import is_exempt
 
 
 class TestExemptions:

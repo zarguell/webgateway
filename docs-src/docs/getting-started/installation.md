@@ -9,8 +9,8 @@
 ## Clone & Configure
 
 ```bash
-git clone <repo-url> webgateway
-cd webgateway
+git clone <repo-url> serp_llm
+cd serp_llm
 cp .env.example .env
 ```
 
@@ -35,5 +35,5 @@ curl http://localhost:8080/health
 ```bash
 make install            # creates .venv, installs dev deps
 source .venv/bin/activate
-uvicorn webgateway.main:app --reload
+uvicorn serp_llm.main:app --reload
 ```

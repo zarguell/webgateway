@@ -2,20 +2,20 @@
 
 ## Overview
 
-This deployment gives you the full WebGateway stack - web search, content extraction, and library documentation - with zero API keys. One `docker compose up` and you're running.
+This deployment gives you the full serpLLM stack - web search, content extraction, and library documentation - with zero API keys. One `docker compose up` and you're running.
 
 Six containers work together:
 
 | Container | Role | Externally Accessible |
 |---|---|---|
 | Traefik | Reverse proxy + TLS termination | Yes (ports 80, 443) |
-| WebGateway | API gateway + policy engine | Via Traefik only |
+| serpLLM | API gateway + policy engine | Via Traefik only |
 | SearXNG | Meta-search aggregator | Internal |
 | Crawl4AI | Full browser rendering | Internal |
 | DevDocs | 100+ library documentation sets | Internal |
 | InvisiblePlaywright | Stealth anti-bot browser | Internal |
 
-Only WebGateway is exposed externally (through Traefik). All backend services stay on the internal Docker network. **8 GB RAM recommended.**
+Only serpLLM is exposed externally (through Traefik). All backend services stay on the internal Docker network. **8 GB RAM recommended.**
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ Five commands to get running:
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/zarguell/webgateway.git && cd webgateway
+git clone https://github.com/zarguell/serp_llm.git && cd serp_llm
 
 # 2. Generate a self-signed TLS certificate
 mkdir -p certs dynamic
@@ -86,7 +86,7 @@ The `-k` flag skips TLS verification for the self-signed cert. In production wit
                                  Traefik
                               (TLS termination)
                                     |
-                              WebGateway
+                              serpLLM
                               (policy engine)
                           /       |        |        \
                          ↓        ↓        ↓         ↓
@@ -97,7 +97,7 @@ The `-k` flag skips TLS verification for the self-signed cert. In production wit
                               └─ Jina Reader (remote, free tier)
 ```
 
-Traefik terminates TLS on ports 443 (HTTPS) and redirects port 80 to 443. It routes requests to WebGateway based on the `Host(gateway.localhost)` rule. WebGateway dispatches to internal backend services based on policy configuration. None of the backend containers are exposed outside the Docker network.
+Traefik terminates TLS on ports 443 (HTTPS) and redirects port 80 to 443. It routes requests to serpLLM based on the `Host(gateway.localhost)` rule. serpLLM dispatches to internal backend services based on policy configuration. None of the backend containers are exposed outside the Docker network.
 
 ## Provider Reference
 
@@ -114,7 +114,7 @@ Search defaults to SearXNG. Extract defaults to Jina (free tier), with a fallbac
 
 ## Configuration
 
-All settings live in `config.selfhosted.yaml`, mounted into the WebGateway container. Here's what the key sections do:
+All settings live in `config.selfhosted.yaml`, mounted into the serpLLM container. Here's what the key sections do:
 
 ```yaml
 defaults:
@@ -159,7 +159,7 @@ auth:
 **To edit:** change `config.selfhosted.yaml`, then either:
 
 ```bash
-docker compose restart webgateway
+docker compose restart serpllm
 ```
 
 Or trigger hot reload (no restart):
@@ -206,7 +206,7 @@ command:
   - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
   - "--providers.docker=true"
   - "--providers.docker.exposedbydefault=false"
-  - "--providers.docker.network=webgateway-net"
+  - "--providers.docker.network=serpllm-net"
 ```
 
 ### 2. Add Let's Encrypt storage volume
@@ -230,16 +230,16 @@ volumes:
 
 ```yaml
 # Change this:
-- "traefik.http.routers.webgateway.tls=true"
+- "traefik.http.routers.serpllm.tls=true"
 
 # To this:
-- "traefik.http.routers.webgateway.tls.certresolver=le"
+- "traefik.http.routers.serpllm.tls.certresolver=le"
 ```
 
 Also update the `Host` rule to your real domain:
 
 ```yaml
-- "traefik.http.routers.webgateway.rule=Host(`gateway.yourdomain.com`)"
+- "traefik.http.routers.serpllm.rule=Host(`gateway.yourdomain.com`)"
 ```
 
 Restart the stack:
@@ -258,7 +258,7 @@ Traefik automatically requests certificates on first connection and renews them 
 | Container won't start | `docker compose logs <service>` for error details |
 | Certificate errors | Regenerate certs: `rm certs/* dynamic/tls.yml` then re-run the quick start cert step, restart traefik |
 | Health checks failing | `docker compose ps` - check the STATUS column. First startup can take 60s |
-| Auth errors | Verify `config.selfhosted.yaml` has the right auth keys, restart webgateway |
+| Auth errors | Verify `config.selfhosted.yaml` has the right auth keys, restart serpllm |
 | SearXNG returning empty results | Check `searxng-settings.yml` has valid search engines configured |
 | Crawl4AI crashes | Check memory limits. Needs at least 1 GB reserved, 4 GB limit recommended |
 | Port 443 already in use | Stop any other service listening on 443, or change Traefik's port mapping |
@@ -274,7 +274,7 @@ docker compose -f docker-compose.selfhosted.yml down -v
 | Container | Base RAM | Active RAM |
 |---|---|---|
 | Traefik | ~20 MB | ~20 MB |
-| WebGateway | ~200 MB | ~200 MB |
+| serpLLM | ~200 MB | ~200 MB |
 | SearXNG | ~100 MB | ~200 MB |
 | Crawl4AI | ~270 MB | ~1-4 GB |
 | DevDocs | ~200 MB | ~300 MB |

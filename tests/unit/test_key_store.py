@@ -8,7 +8,7 @@ from pathlib import Path
 import bcrypt
 import pytest
 
-from webgateway.key_store import KeyNotFound, KeyStore, StoredKey
+from serp_llm.key_store import KeyNotFound, KeyStore, StoredKey
 
 
 @pytest.fixture

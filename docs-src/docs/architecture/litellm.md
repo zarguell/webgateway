@@ -1,6 +1,6 @@
 # LiteLLM Integration Boundary
 
-WebGateway is designed to sit _behind_ LiteLLM in an AI agent stack. The integration boundary is well-defined:
+serpLLM is designed to sit _behind_ LiteLLM in an AI agent stack. The integration boundary is well-defined:
 
 ## LiteLLM's Role
 
@@ -9,7 +9,7 @@ WebGateway is designed to sit _behind_ LiteLLM in an AI agent stack. The integra
 - Request/response logging for LLM calls
 - Spend tracking and rate limiting per user
 
-## WebGateway's Role
+## serpLLM's Role
 
 - Web search and content extraction abstraction
 - Provider routing based on content policies (not LLM routing)
@@ -19,16 +19,16 @@ WebGateway is designed to sit _behind_ LiteLLM in an AI agent stack. The integra
 
 ## Integration Points
 
-LiteLLM calls WebGateway via HTTP or MCP:
+LiteLLM calls serpLLM via HTTP or MCP:
 
 ```
-Agent → LiteLLM (LLM calls) → WebGateway (web tools)
+Agent → LiteLLM (LLM calls) → serpLLM (web tools)
 ```
 
 Or directly:
 
 ```
-Agent → WebGateway (search, extract endpoints)
+Agent → serpLLM (search, extract endpoints)
 ```
 
-WebGateway never makes LLM calls (except the optional LLM Judge for ambiguous routing decisions).
+serpLLM never makes LLM calls (except the optional LLM Judge for ambiguous routing decisions).

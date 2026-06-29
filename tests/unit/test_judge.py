@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 from pytest_httpx import HTTPXMock
 
-from webgateway.config import ConfigManager, GatewayConfig
-from webgateway.judge import (
+from serp_llm.config import ConfigManager, GatewayConfig
+from serp_llm.judge import (
     DecisionCache,
     FailedProvider,
     JudgeContext,
@@ -17,8 +17,8 @@ from webgateway.judge import (
     ProviderInfo,
     extract_judge_json,
 )
-from webgateway.providers.base import ProviderMetadata
-from webgateway.providers.registry import ProviderRegistry
+from serp_llm.providers.base import ProviderMetadata
+from serp_llm.providers.registry import ProviderRegistry
 
 
 class TestDecisionCache:
@@ -28,7 +28,7 @@ class TestDecisionCache:
 
     def test_set_then_get(self):
         cache = DecisionCache(ttl_seconds=60)
-        from webgateway.policy.models import RoutingDecision
+        from serp_llm.policy.models import RoutingDecision
 
         decision = RoutingDecision(
             policy_matched="llm_judge",
@@ -42,7 +42,7 @@ class TestDecisionCache:
 
     def test_ttl_expiry(self):
         cache = DecisionCache(ttl_seconds=0)
-        from webgateway.policy.models import RoutingDecision
+        from serp_llm.policy.models import RoutingDecision
 
         decision = RoutingDecision(
             policy_matched="llm_judge",
@@ -55,7 +55,7 @@ class TestDecisionCache:
 
     def test_clear(self):
         cache = DecisionCache(ttl_seconds=60)
-        from webgateway.policy.models import RoutingDecision
+        from serp_llm.policy.models import RoutingDecision
 
         decision = RoutingDecision(
             policy_matched="llm_judge",
@@ -489,9 +489,9 @@ class TestEvaluateForRetry:
 # ---------------------------------------------------------------------------
 
 
-from webgateway.judge import LLMJudge as LLMJudgeClass  # noqa: E402
-from webgateway.policy.models import RoutingDecision  # noqa: E402
-from webgateway.service import GatewayService  # noqa: E402
+from serp_llm.judge import LLMJudge as LLMJudgeClass  # noqa: E402
+from serp_llm.policy.models import RoutingDecision  # noqa: E402
+from serp_llm.service import GatewayService  # noqa: E402
 
 
 def _make_judge(enabled: bool = True) -> MagicMock:
@@ -633,7 +633,7 @@ class TestServicePolicyMissIntegration:
 
 from unittest.mock import AsyncMock  # noqa: E402
 
-from webgateway.providers.base import ProviderError  # noqa: E402
+from serp_llm.providers.base import ProviderError  # noqa: E402
 
 
 class TestServiceRetryIntegration:

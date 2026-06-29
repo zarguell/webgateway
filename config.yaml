@@ -1,5 +1,5 @@
 # =============================================================================
-# WebGateway Configuration
+# serpLLM Configuration
 # =============================================================================
 # This file is hot-reloadable via POST /admin/reload or filesystem watch.
 # Environment variables are resolved at process start via ${VAR} syntax.
@@ -571,9 +571,9 @@ alerts:
     username: ${SMTP_USER}
     password: ${SMTP_PASS}
     use_tls: true
-    from_addr: ${SMTP_FROM:-webgateway@localhost}
+    from_addr: ${SMTP_FROM:-serpllm@localhost}
     to_addrs: ${SMTP_TO:-[]}
-    subject_prefix: "[WebGateway]"
+    subject_prefix: "[serpLLM]"
 
 # ---------------------------------------------------------------------------
 # MCP Server — downstream interface for AI agents

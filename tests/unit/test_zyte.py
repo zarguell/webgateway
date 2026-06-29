@@ -5,8 +5,8 @@ import base64
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ExtractOptions, ProviderError
-from webgateway.providers.zyte import ZyteAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError
+from serp_llm.providers.zyte import ZyteAdapter
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-"""Integration tests for Exa search through the WebGateway.
+"""Integration tests for Exa search through the serpLLM.
 
 Auto-skips when Exa isn't healthy on the gateway (no API key,
 network unreachable). If the API key has exhausted its credits,

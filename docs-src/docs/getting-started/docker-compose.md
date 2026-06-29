@@ -4,7 +4,7 @@
 
 ```yaml
 services:
-  webgateway:
+  serpllm:
     build: .
     ports:
       - "8080:8080"

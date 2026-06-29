@@ -6,7 +6,7 @@
 docker compose up -d
 ```
 
-Starts: webgateway + searxng
+Starts: serpllm + searxng
 
 ## With Stealth Browser
 

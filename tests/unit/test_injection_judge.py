@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from webgateway.injection.judge import InjectionJudge
+from serp_llm.injection.judge import InjectionJudge
 
 
 class TestInjectionJudge:

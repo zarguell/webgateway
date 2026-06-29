@@ -7,8 +7,8 @@ import time
 
 import pytest
 
-from webgateway.config import GatewayConfig
-from webgateway.resource_manager import ProviderResourceManager
+from serp_llm.config import GatewayConfig
+from serp_llm.resource_manager import ProviderResourceManager
 
 
 def _make_manager(tmp_dir: str, overrides: dict | None = None) -> ProviderResourceManager:

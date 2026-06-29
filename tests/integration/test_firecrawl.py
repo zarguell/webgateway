@@ -1,4 +1,4 @@
-"""Integration tests for Firecrawl extract + search through the WebGateway.
+"""Integration tests for Firecrawl extract + search through the serpLLM.
 
 These tests make real requests to the Firecrawl cloud API (api.firecrawl.dev).
 They auto-skip when Firecrawl isn't healthy on the gateway (no API key,

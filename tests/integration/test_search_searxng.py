@@ -1,6 +1,6 @@
-"""Integration tests for SearXNG search through the WebGateway.
+"""Integration tests for SearXNG search through the serpLLM.
 
-These tests run against a live Docker Compose stack (SearXNG + WebGateway).
+These tests run against a live Docker Compose stack (SearXNG + serpLLM).
 Start the stack with ``make integration-up`` then run ``make integration-test``,
 or do both at once with ``make test-integration``.
 """

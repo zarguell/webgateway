@@ -7,12 +7,12 @@ import pytest
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
-from webgateway.auth import verify_admin
-from webgateway.config import AuthKey
-from webgateway.main import create_app
-from webgateway.sessions.manager import SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData
-from webgateway.sessions.store import SessionStore
+from serp_llm.auth import verify_admin
+from serp_llm.config import AuthKey
+from serp_llm.main import create_app
+from serp_llm.sessions.manager import SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionStore
 
 
 @pytest.fixture

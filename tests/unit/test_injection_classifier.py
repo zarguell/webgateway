@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from webgateway.injection.classifier import ClassifierResult, OnnxClassifierLayer
+from serp_llm.injection.classifier import ClassifierResult, OnnxClassifierLayer
 
 
 class TestOnnxClassifier:

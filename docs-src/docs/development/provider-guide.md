@@ -40,7 +40,7 @@ All provider adapters **must** be async. If the upstream library is synchronous 
 
 ### Step 1: Create the adapter
 
-**File:** `src/webgateway/providers/<name>.py`
+**File:** `src/serp_llm/providers/<name>.py`
 
 Follow this skeleton exactly:
 
@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import httpx  # if using httpx directly
 
-from webgateway.providers.base import (
+from serp_llm.providers.base import (
     ExtractOptions,
     ExtractResult,
     ProviderError,
@@ -127,12 +127,12 @@ class <Name>Adapter:
 
 ### Step 2: Register in the provider registry
 
-**File:** `src/webgateway/providers/registry.py`
+**File:** `src/serp_llm/providers/registry.py`
 
 Add import at the top:
 
 ```python
-from webgateway.providers.<name> import <Name>Adapter
+from serp_llm.providers.<name> import <Name>Adapter
 ```
 
 Add a branch in `_create_adapter()`:
@@ -228,8 +228,8 @@ from __future__ import annotations
 import pytest
 from pytest_httpx import HTTPXMock  # if using httpx
 
-from webgateway.providers.base import ProviderError
-from webgateway.providers.<name> import <Name>Adapter
+from serp_llm.providers.base import ProviderError
+from serp_llm.providers.<name> import <Name>Adapter
 
 
 @pytest.fixture
@@ -385,8 +385,8 @@ All three must pass before the provider is done.
 
 | # | File | Action |
 |---|---|---|
-| 1 | `src/webgateway/providers/<name>.py` | **Create** — adapter implementation |
-| 2 | `src/webgateway/providers/registry.py` | **Modify** — import + `_create_adapter()` branch |
+| 1 | `src/serp_llm/providers/<name>.py` | **Create** — adapter implementation |
+| 2 | `src/serp_llm/providers/registry.py` | **Modify** — import + `_create_adapter()` branch |
 | 3 | `pyproject.toml` | **Modify** — add dependency (if new package needed) |
 | 4 | `config.yaml` | **Modify** — provider block + DLP policy + post-processing |
 | 5 | `config.test.yaml` | **Modify** — provider block + post-processing |

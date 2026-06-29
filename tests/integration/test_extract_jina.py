@@ -1,4 +1,4 @@
-"""Integration tests for Jina Reader extraction through the WebGateway.
+"""Integration tests for Jina Reader extraction through the serpLLM.
 
 These tests make real requests to r.jina.ai. They auto-skip when
 JINA_API_KEY is not set in the environment, so they add zero cost

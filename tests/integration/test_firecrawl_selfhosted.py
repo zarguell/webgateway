@@ -1,4 +1,4 @@
-"""Integration tests for self-hosted Firecrawl through the WebGateway.
+"""Integration tests for self-hosted Firecrawl through the serpLLM.
 
 These tests run against a local Firecrawl stack (5 containers) started via:
     docker compose -f docker-compose.test.yml --profile firecrawl-selfhosted up

@@ -1,4 +1,4 @@
-# WebGateway
+# serpLLM
 
 Self-hosted, Docker-native FastAPI gateway that abstracts web search and content extraction behind a single policy-driven API.
 

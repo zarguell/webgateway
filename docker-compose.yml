@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  webgateway:
+  serpllm:
     build: .
     ports:
       - "8080:8080"
@@ -19,7 +19,7 @@ services:
       - searxng
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
 
   searxng:
     image: searxng/searxng:latest
@@ -27,7 +27,7 @@ services:
       - "8081:8080"
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
 
   # --- Crawl4AI self-hosted crawler (JS rendering + markdown) ---
   crawl4ai:
@@ -53,7 +53,7 @@ services:
       start_period: 40s
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
 
   gluetun:
     image: qmcgaw/gluetun:latest
@@ -75,11 +75,11 @@ services:
       # - WIREGUARD_DNS=${WIREGUARD_DNS:-1.1.1.1}
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
 
   # --- Stealth browser (C++-patched Firefox 150) ---
   invisible-playwright:
-    image: webgateway/invisible-playwright:latest
+    image: serpllm/invisible-playwright:latest
     profiles: ["stealth", "browsers"]
     ports: ["3001:3001"]
     environment:
@@ -97,7 +97,7 @@ services:
     restart: unless-stopped
 
 networks:
-  webgateway-net:
+  serpllm-net:
     driver: bridge
 
 volumes:

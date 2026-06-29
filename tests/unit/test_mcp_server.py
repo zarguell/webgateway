@@ -10,9 +10,9 @@ from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from starlette.testclient import TestClient
 
-from webgateway.config import GatewayConfig, MCPConfig
-from webgateway.dlp import DlpBlockedError
-from webgateway.mcp.server import (
+from serp_llm.config import GatewayConfig, MCPConfig
+from serp_llm.dlp import DlpBlockedError
+from serp_llm.mcp.server import (
     McpAuthMiddleware,
     create_mcp_server,
     execute_web_extract,
@@ -20,8 +20,8 @@ from webgateway.mcp.server import (
     mcp_api_key_id,
     mount_mcp,
 )
-from webgateway.providers.base import ProviderError
-from webgateway.schemas import ExtractResponse, SearchResponse
+from serp_llm.providers.base import ProviderError
+from serp_llm.schemas import ExtractResponse, SearchResponse
 
 
 class TestMCPConfig:
@@ -150,7 +150,7 @@ def _make_config_manager_with_keys():
 
     import yaml
 
-    from webgateway.config import ConfigManager
+    from serp_llm.config import ConfigManager
     config_data = {
         "auth": {
             "keys": [
@@ -252,7 +252,7 @@ class TestMountMcp:
 
         import yaml
 
-        from webgateway.config import ConfigManager
+        from serp_llm.config import ConfigManager
 
         config_data = {
             "mcp": {

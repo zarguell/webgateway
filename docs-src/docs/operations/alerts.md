@@ -1,6 +1,6 @@
 # Alerts
 
-WebGateway can deliver real-time notifications when significant operational events occur — quota thresholds crossed, circuits tripped, quotas exhausted. Notifications are sent through two independent channels: **webhooks** (Slack, Discord, ntfy, or any HTTP endpoint) and **SMTP email**.
+serpLLM can deliver real-time notifications when significant operational events occur — quota thresholds crossed, circuits tripped, quotas exhausted. Notifications are sent through two independent channels: **webhooks** (Slack, Discord, ntfy, or any HTTP endpoint) and **SMTP email**.
 
 Both channels are optional. Configure one, both, or neither.
 
@@ -52,7 +52,7 @@ alerts:
       Content-Type: application/json
 ```
 
-Slack expects a `{"text": "..."}` shape. Use a middleware relay (e.g. a small Lambda or n8n flow) to transform the WebGateway payload into Slack's format, or use ntfy/Discord which accept raw text.
+Slack expects a `{"text": "..."}` shape. Use a middleware relay (e.g. a small Lambda or n8n flow) to transform the serpLLM payload into Slack's format, or use ntfy/Discord which accept raw text.
 
 ### Discord
 
@@ -71,9 +71,9 @@ Self-hosted [ntfy](https://ntfy.sh/) works with no payload transformation:
 ```yaml
 alerts:
   webhook:
-    url: https://ntfy.example.com/webgateway-alerts
+    url: https://ntfy.example.com/serpllm-alerts
     headers:
-      Title: WebGateway Alert
+      Title: serpLLM Alert
 ```
 
 ## SMTP Configuration
@@ -90,14 +90,14 @@ alerts:
     username: ${SMTP_USER}
     password: ${SMTP_PASS}
     use_tls: true
-    from_addr: ${SMTP_FROM:-webgateway@localhost}
+    from_addr: ${SMTP_FROM:-serpllm@localhost}
     to_addrs:
       - ops-team@example.com
       - oncall@example.com
-    subject_prefix: "[WebGateway]"
+    subject_prefix: "[serpLLM]"
 ```
 
-Email subjects are prefixed with `subject_prefix` followed by the event type (e.g. `[WebGateway] quota_alert`). The body is a plain-text key-value rendering of the event data.
+Email subjects are prefixed with `subject_prefix` followed by the event type (e.g. `[serpLLM] quota_alert`). The body is a plain-text key-value rendering of the event data.
 
 ## Delivery Semantics
 
@@ -139,12 +139,12 @@ alerts:
     # Whether to use TLS (STARTTLS for port 587).
     use_tls: true
     # Sender email address.
-    from_addr: ${SMTP_FROM:-webgateway@localhost}
+    from_addr: ${SMTP_FROM:-serpllm@localhost}
     # Recipient list. Each address receives a copy.
     to_addrs:
       - admin@example.com
     # Prefix prepended to every email subject.
-    subject_prefix: "[WebGateway]"
+    subject_prefix: "[serpLLM]"
 ```
 
 ### Security

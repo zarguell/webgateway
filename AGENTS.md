@@ -1,4 +1,4 @@
-# AGENTS.md — WebGateway
+# AGENTS.md — serpLLM
 
 ## What this is
 
@@ -16,7 +16,7 @@ make install                          # creates .venv, installs with dev deps
 
 # Lint (must pass before commit)
 make lint                             # ruff check src/ tests/
-source .venv/bin/activate && ruff check src/webgateway/   # lint a subset
+source .venv/bin/activate && ruff check src/serp_llm/   # lint a subset
 
 # Unit tests (no Docker needed)
 make test-unit                        # pytest tests/ --ignore=tests/integration
@@ -36,7 +36,7 @@ make test-integration-firecrawl
 
 ## Local dev stack
 
-The local stack (`docker-compose.local.yml`) is used for **development and research** — this OpenCode instance uses WebGateway's `web_search` and `web_extract` MCP tools through it.
+The local stack (`docker-compose.local.yml`) is used for **development and research** — this OpenCode instance uses serpLLM's `web_search` and `web_extract` MCP tools through it.
 
 ### Starting
 
@@ -50,7 +50,7 @@ docker compose -f docker-compose.local.yml --profile local up -d --build  # star
 Source code changes (adapter edits, new providers, config changes) **require rebuilding the gateway container**:
 
 ```bash
-docker compose -f docker-compose.local.yml --profile local up -d --build webgateway
+docker compose -f docker-compose.local.yml --profile local up -d --build serpllm
 ```
 
 Config-only changes (`config.local.yaml`) use hot-reload — just `POST /admin/reload`.
@@ -67,14 +67,14 @@ Request → Auth → Policy Engine (YAML rules) → DLP outbound → Cache looku
   → Cache write → Response
 ```
 
-- `src/webgateway/main.py` — App factory, lifespan, exception handlers
-- `src/webgateway/service.py` — `GatewayService` orchestrates the full pipeline; all DLP/cache/provider integration lives here
-- `src/webgateway/config.py` — Pydantic config models, hot-reloadable via `POST /admin/reload`
-- `src/webgateway/policy/engine.py` — Tier 1 deterministic YAML rule matcher
-- `src/webgateway/providers/` — One file per provider adapter (searxng, jina, brave, tavily, firecrawl, duckduckgo, zyte, flaresolverr, crawl4ai, exa, perplexity, context7, devdocs, invisible_playwright)
-- `src/webgateway/dlp/` — Regex scanner, Luhn validator, outbound/inbound middleware
-- `src/webgateway/cache/` — SQLite cache store, key derivation, TTL rules, quality validator
-- `src/webgateway/routes/` — Thin FastAPI route handlers (search, extract, health, admin, cache)
+- `src/serp_llm/main.py` — App factory, lifespan, exception handlers
+- `src/serp_llm/service.py` — `GatewayService` orchestrates the full pipeline; all DLP/cache/provider integration lives here
+- `src/serp_llm/config.py` — Pydantic config models, hot-reloadable via `POST /admin/reload`
+- `src/serp_llm/policy/engine.py` — Tier 1 deterministic YAML rule matcher
+- `src/serp_llm/providers/` — One file per provider adapter (searxng, jina, brave, tavily, firecrawl, duckduckgo, zyte, flaresolverr, crawl4ai, exa, perplexity, context7, devdocs, invisible_playwright)
+- `src/serp_llm/dlp/` — Regex scanner, Luhn validator, outbound/inbound middleware
+- `src/serp_llm/cache/` — SQLite cache store, key derivation, TTL rules, quality validator
+- `src/serp_llm/routes/` — Thin FastAPI route handlers (search, extract, health, admin, cache)
 
 ## Config files
 
@@ -105,7 +105,7 @@ Default regex patterns adapted from [Gitleaks](https://github.com/gitleaks/gitle
 ## Conventions
 
 - Async throughout (`httpx`, `asyncio`). Provider adapters implement `async def search()` and `async def extract()`.
-- Provider adapter protocol: `src/webgateway/providers/base.py` defines `ProviderAdapter`, `SearchOptions`, `ExtractOptions`, `SearchResult`, `ExtractResult`, `ProviderError`.
+- Provider adapter protocol: `src/serp_llm/providers/base.py` defines `ProviderAdapter`, `SearchOptions`, `ExtractOptions`, `SearchResult`, `ExtractResult`, `ProviderError`.
 - **When implementing a new provider, read `docs-src/docs/development/provider-guide.md` first.** It has the full 12-step checklist — every file to create/modify, code skeleton, test patterns, and config wiring.
 - Audit entries are JSON Lines, one per request, append-only rotating file at `/app/logs/gateway.jsonl`.
 - `request_id` is generated per request (format: `req_` + hex) and passed through the entire pipeline.
@@ -125,7 +125,7 @@ Default regex patterns adapted from [Gitleaks](https://github.com/gitleaks/gitle
 - Docker images are published to GHCR on git tag push: `git tag v0.1.0 && git push --tags`
 - Workflow builds two images: `latest` (lean, 382MB) and `<tag>-injection` (full, ~1.4GB with ONNX model)
 - Tags follow semver: `vMAJOR.MINOR.PATCH` — no automated tagging, tag manually when ready
-- To build locally with injection: `docker build --build-arg ENABLE_INJECTION=1 -t webgateway .`
+- To build locally with injection: `docker build --build-arg ENABLE_INJECTION=1 -t serpllm .`
 
 ## PRD
 

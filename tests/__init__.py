@@ -1,1 +1,1 @@
-"""Test suite for WebGateway."""
+"""Test suite for serpLLM."""

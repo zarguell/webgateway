@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "webgateway"
+name = "serp-llm"
 version = "0.1.0"
 description = "Self-hosted, policy-driven web search and extraction gateway for AI agents"
 
@@ -48,7 +48,7 @@ injection = [
 
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/webgateway"]
+packages = ["src/serp_llm"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -62,4 +62,4 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["webgateway"]
+known-first-party = ["serp_llm"]

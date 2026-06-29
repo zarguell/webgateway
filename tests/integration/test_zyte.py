@@ -1,4 +1,4 @@
-"""Integration tests for Zyte extraction through the WebGateway.
+"""Integration tests for Zyte extraction through the serpLLM.
 
 These tests make real requests to api.zyte.com. They auto-skip when
 Zyte isn't healthy on the gateway (no API key, network unreachable, etc.).

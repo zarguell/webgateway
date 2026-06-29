@@ -1,6 +1,6 @@
 # Interactive API Docs
 
-WebGateway provides auto-generated OpenAPI 3.1 documentation via FastAPI.
+serpLLM provides auto-generated OpenAPI 3.1 documentation via FastAPI.
 
 ## Endpoints
 

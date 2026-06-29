@@ -1,4 +1,4 @@
-"""Integration tests for Perplexity search through the WebGateway.
+"""Integration tests for Perplexity search through the serpLLM.
 
 Auto-skips when Perplexity isn't healthy on the gateway (no API key,
 network unreachable).

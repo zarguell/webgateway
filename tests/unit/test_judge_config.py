@@ -1,7 +1,7 @@
 """Tests for the refactored LLMJudgeConfig."""
 from __future__ import annotations
 
-from webgateway.config import GatewayConfig, LLMJudgeConfig
+from serp_llm.config import GatewayConfig, LLMJudgeConfig
 
 
 class TestLLMJudgeConfig:

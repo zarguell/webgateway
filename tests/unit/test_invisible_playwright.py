@@ -5,8 +5,8 @@ import json
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ExtractOptions, ProviderError, ProviderMetadata
-from webgateway.providers.invisible_playwright import InvisiblePlaywrightAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError, ProviderMetadata
+from serp_llm.providers.invisible_playwright import InvisiblePlaywrightAdapter
 
 
 @pytest.fixture

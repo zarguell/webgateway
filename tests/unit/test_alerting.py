@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from webgateway.alerting import AlertDispatcher
-from webgateway.config import AlertConfig, SmtpConfig, WebhookConfig
+from serp_llm.alerting import AlertDispatcher
+from serp_llm.config import AlertConfig, SmtpConfig, WebhookConfig
 
 # ═══════════════════════════════════════════════════════════════════
 # Helpers
@@ -32,9 +32,9 @@ def _smtp_config(to_addrs: list[str] | None = None, **overrides) -> SmtpConfig:
         username="alerts@example.com",
         password="secret",
         use_tls=True,
-        from_addr="webgateway@example.com",
+        from_addr="serp_llm@example.com",
         to_addrs=to_addrs if to_addrs is not None else ["admin@example.com"],
-        subject_prefix="[WebGateway]",
+        subject_prefix="[serpLLM]",
     )
     defaults.update(overrides)
     return SmtpConfig(**defaults)

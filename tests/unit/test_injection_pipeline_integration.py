@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.config import PostProcessingConfig, PromptInjectionConfig
-from webgateway.injection.detector import InjectionDetector
-from webgateway.post_processing.pipeline import PostProcessingPipeline
+from serp_llm.config import PostProcessingConfig, PromptInjectionConfig
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.post_processing.pipeline import PostProcessingPipeline
 
 
 class TestPipelineStage5:

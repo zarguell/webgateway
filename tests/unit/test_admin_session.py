@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from webgateway.admin_session import AdminSession, AdminSessionManager
+from serp_llm.admin_session import AdminSession, AdminSessionManager
 
 
 class TestAdminSessionManager:

@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from webgateway.providers.base import ExtractOptions, ProviderError, SearchOptions
-from webgateway.providers.duckduckgo import DuckDuckGoAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError, SearchOptions
+from serp_llm.providers.duckduckgo import DuckDuckGoAdapter
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ class TestDuckDuckGoAdapter:
         assert meta.self_hosted is False
         assert meta.gdpr_compliant is True
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_success(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.return_value = _FAKE_RESULTS
@@ -44,7 +44,7 @@ class TestDuckDuckGoAdapter:
         assert result.results[0].snippet == "Official site"
         mock_instance.text.assert_called_once_with("python", max_results=5)
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_passes_proxy(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.return_value = []
@@ -56,7 +56,7 @@ class TestDuckDuckGoAdapter:
             proxy="http://proxy:3128", timeout=10
         )
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_empty_results(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.return_value = []
@@ -66,7 +66,7 @@ class TestDuckDuckGoAdapter:
 
         assert len(result.results) == 0
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_rate_limit(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         from ddgs.exceptions import RatelimitException
 
@@ -78,7 +78,7 @@ class TestDuckDuckGoAdapter:
             await adapter.search("test", options)
         assert exc_info.value.error_class == "rate_limited"
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_timeout(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         from ddgs.exceptions import TimeoutException
 
@@ -90,7 +90,7 @@ class TestDuckDuckGoAdapter:
             await adapter.search("test", options)
         assert exc_info.value.error_class == "timeout"
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_generic_error(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.side_effect = RuntimeError("Network error")
@@ -105,21 +105,21 @@ class TestDuckDuckGoAdapter:
         with pytest.raises(ProviderError, match="does not support extraction"):
             await adapter.extract("https://example.com", ExtractOptions())
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_health_check_success(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.return_value = [{"title": "ok", "href": "http://x.com", "body": "ok"}]
 
         assert await adapter.health_check() is True
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_health_check_failure(self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter):
         mock_instance = mock_ddgs_cls.return_value
         mock_instance.text.side_effect = Exception("connection refused")
 
         assert await adapter.health_check() is False
 
-    @patch("webgateway.providers.duckduckgo.DDGS")
+    @patch("serp_llm.providers.duckduckgo.DDGS")
     async def test_search_num_results_truncation(
         self, mock_ddgs_cls: MagicMock, adapter: DuckDuckGoAdapter
     ):

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.config import PostProcessingConfig
-from webgateway.post_processing.pipeline import PostProcessingPipeline
-from webgateway.post_processing.strategies import StrategyResult, StrategySelector
+from serp_llm.config import PostProcessingConfig
+from serp_llm.post_processing.pipeline import PostProcessingPipeline
+from serp_llm.post_processing.strategies import StrategyResult
 
 
 class _FakeStrategySelector:

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 
 import pytest
 from cryptography.fernet import Fernet
 
-from webgateway.sessions.models import CookieEntry, SessionData, session_to_info
-from webgateway.sessions.store import SessionNotFound, SessionStore
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionNotFound, SessionStore
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 """Integration tests for DLP (Data Loss Prevention) enforcement.
 
-These tests run against a live Docker Compose stack (SearXNG + WebGateway)
+These tests run against a live Docker Compose stack (SearXNG + serpLLM)
 and verify that the DLP middleware blocks, redacts, and reroutes requests
 through the real HTTP API.
 

@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
-from webgateway.sessions.manager import SessionError, SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData
-from webgateway.sessions.store import SessionStore
+from serp_llm.sessions.manager import SessionError, SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionStore
 
 
 @pytest.fixture

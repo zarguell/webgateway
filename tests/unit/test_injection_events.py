@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from webgateway.injection.events import EventLogger
+from serp_llm.injection.events import EventLogger
 
 
 class TestEventLogger:

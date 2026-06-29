@@ -1,4 +1,4 @@
-"""Lightweight sidecar that bridges WebGateway to a host Chrome via CDP.
+"""Lightweight sidecar that bridges serpLLM to a host Chrome via CDP.
 
 Connects to an existing Chrome instance (no browser binary, no playwright
 install). Extracts page content and converts to markdown with trafilatura.

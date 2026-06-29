@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ProviderError
-from webgateway.providers.devdocs import DevDocsAdapter
+from serp_llm.providers.base import ProviderError
+from serp_llm.providers.devdocs import DevDocsAdapter
 
 
 @pytest.fixture

@@ -7,11 +7,11 @@ import time
 
 import pytest
 
-from webgateway.cache.keys import extract_key, search_key
-from webgateway.cache.quality import validate_content
-from webgateway.cache.store import CacheStore
-from webgateway.cache.ttl import resolve_ttl
-from webgateway.config import CacheMatch, CacheTTLRule
+from serp_llm.cache.keys import extract_key, search_key
+from serp_llm.cache.quality import validate_content
+from serp_llm.cache.store import CacheStore
+from serp_llm.cache.ttl import resolve_ttl
+from serp_llm.config import CacheMatch, CacheTTLRule
 
 # ---------------------------------------------------------------------------
 # Keys

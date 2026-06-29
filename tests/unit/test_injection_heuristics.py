@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from webgateway.injection.heuristics import HeuristicLayer
+from serp_llm.injection.heuristics import HeuristicLayer
 
 
 class TestHeuristicLayer:

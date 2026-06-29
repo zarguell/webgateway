@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from webgateway.middleware.security_headers import SecurityHeadersMiddleware
+from serp_llm.middleware.security_headers import SecurityHeadersMiddleware
 
 
 def _make_app() -> FastAPI:

@@ -14,7 +14,6 @@ The tests auto-skip when the sidecar isn't running.  Start it with::
 from __future__ import annotations
 
 import httpx
-import pytest
 
 EXAMPLE_COM_URL = "https://example.com"
 EXAMPLE_COM_TITLE = "Example Domain"

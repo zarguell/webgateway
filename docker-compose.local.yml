@@ -1,4 +1,4 @@
-# Lightweight local compose stack — WebGateway + SearXNG + CDP Chrome sidecar.
+# Lightweight local compose stack — serpLLM + SearXNG + CDP Chrome sidecar.
 #
 # Usage:
 #   docker compose -f docker-compose.local.yml --profile local up -d --build
@@ -11,15 +11,15 @@
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml --profile local up -d
 
 services:
-  webgateway:
+  serpllm:
     profiles: ["local"]
     build: .
     ports:
       - "8080:8080"
     volumes:
       - ./config.local.yaml:/app/config.yaml:ro
-      - webgateway-data:/app/data
-      - webgateway-logs:/app/logs
+      - serpllm-data:/app/data
+      - serpllm-logs:/app/logs
     depends_on:
       - searxng
     environment:
@@ -68,5 +68,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  webgateway-data:
-  webgateway-logs:
+  serpllm-data:
+  serpllm-logs:

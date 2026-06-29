@@ -52,29 +52,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd -r webgateway && useradd -r -g webgateway -d /app -s /sbin/nologin webgateway
+RUN groupadd -r serpllm && useradd -r -g serpllm -d /app -s /sbin/nologin serpllm
 
 WORKDIR /app
 
-RUN mkdir -p /app/data /app/logs /app/static /app/models && chown -R webgateway:webgateway /app/data /app/logs /app/static
+RUN mkdir -p /app/data /app/logs /app/static /app/models && chown -R serpllm:serpllm /app/data /app/logs /app/static
 
 # COPY --chown avoids creating a duplicate layer (saves ~750MB vs COPY + chown)
-COPY --from=builder --chown=webgateway:webgateway /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder --chown=webgateway:webgateway /usr/local/bin /usr/local/bin
-COPY --from=builder --chown=webgateway:webgateway /app/models /app/models
+COPY --from=builder --chown=serpllm:serpllm /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder --chown=serpllm:serpllm /usr/local/bin /usr/local/bin
+COPY --from=builder --chown=serpllm:serpllm /app/models /app/models
 
-COPY --chown=webgateway:webgateway src/ ./src/
+COPY --chown=serpllm:serpllm src/ ./src/
 
 # Copy MkDocs output
 COPY --from=docs-builder /app/static/docs /app/static/docs
-RUN chown webgateway:webgateway /app/static/docs
+RUN chown serpllm:serpllm /app/static/docs
 
-COPY --chown=webgateway:webgateway entrypoint.sh /app/entrypoint.sh
+COPY --chown=serpllm:serpllm entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
- USER webgateway
+USER serpllm
 
 EXPOSE 8080
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["uvicorn", "webgateway.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "serp_llm.main:app", "--host", "0.0.0.0", "--port", "8080"]

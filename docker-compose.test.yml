@@ -1,5 +1,5 @@
 services:
-  webgateway:
+  serpllm:
     build: .
     ports:
       - "8080:8080"
@@ -74,7 +74,7 @@ services:
       start_period: 40s
     restart: "no"
     networks:
-      - webgateway-net
+      - serpllm-net
 
   # ---- Self-hosted Firecrawl (opt-in via --profile firecrawl-selfhosted) ----
 
@@ -164,5 +164,5 @@ volumes:
   crawl4ai-cache:
 
 networks:
-  webgateway-net:
+  serpllm-net:
     driver: bridge

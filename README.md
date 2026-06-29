@@ -4,18 +4,18 @@
   <img src="https://img.shields.io/badge/tests-408_passings-green" alt="408 tests">
 </p>
 
-# WebGateway
+# serpLLM
 
 **Self-hosted, policy-driven web search and content extraction for AI agents.**
 
-WebGateway is a single FastAPI service that abstracts web search and content extraction behind a policy-driven API. Agents call two tools — `web_search` and `web_extract` — and the gateway handles provider selection, retry logic, proxy routing, DLP enforcement, caching, and audit logging entirely below the agent layer.
+serpLLM is a single FastAPI service that abstracts web search and content extraction behind a policy-driven API. Agents call two tools — `web_search` and `web_extract` — and the gateway handles provider selection, retry logic, proxy routing, DLP enforcement, caching, and audit logging entirely below the agent layer.
 
 ```
 Agent / LLM
      ↓
   POST /search  |  POST /extract  |  MCP (web_search / web_extract)
      ↓
-  WebGateway  ←  policy engine, DLP, cache, provider dispatch
+  serpLLM  ←  policy engine, DLP, cache, provider dispatch
      ↓
    SearXNG | Jina | Brave | Tavily | Firecrawl | Exa | Context7 | DuckDuckGo | Zyte | FlareSolverr | ...
 ```
@@ -26,8 +26,8 @@ Agent / LLM
 
 ```bash
 # Clone and install
-git clone https://github.com/zarguell/webgateway.git
-cd webgateway
+git clone https://github.com/zarguell/serp_llm.git
+cd serp_llm
 
 # Start the full stack
 docker compose up -d --build
@@ -114,7 +114,7 @@ All provider adapters implement a uniform `ProviderAdapter` protocol — switchi
 
 ## Admin UI
 
-WebGateway includes a built-in admin dashboard at `/admin` — provider health monitoring, cache management, usage analytics, key management, session viewer, and live log streaming.
+serpLLM includes a built-in admin dashboard at `/admin` — provider health monitoring, cache management, usage analytics, key management, session viewer, and live log streaming.
 
 ![Admin Dashboard](docs-src/docs/images/admin-dashboard.png)
 

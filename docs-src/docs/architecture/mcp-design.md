@@ -2,7 +2,7 @@
 
 ## Two-tool contract
 
-WebGateway's MCP server exposes exactly two tools:
+serpLLM's MCP server exposes exactly two tools:
 
 - **`web_search`** — Search the web via configured providers
 - **`web_extract`** — Extract content from a URL
@@ -13,7 +13,7 @@ This is intentional and stable.
 
 Community MCP servers that wrap SearXNG commonly add tools like `search_and_fetch`, `fetch_many`, or `research` that combine search with automatic extraction. These make sense as standalone servers — they need to be useful out of the box.
 
-WebGateway is **infrastructure for intelligent agents**, not a standalone tool. Agents already handle composition:
+serpLLM is **infrastructure for intelligent agents**, not a standalone tool. Agents already handle composition:
 
 - The agent calls `web_search`, inspects results, and decides *which* URLs are worth extracting. Auto-extracting every result wastes tokens on irrelevant pages.
 - The agent can fan out multiple `web_extract` calls concurrently. Parallelism is the agent's job, not the gateway's.
@@ -70,15 +70,15 @@ Available strategies:
 | `meta_extract` | Open Graph, Twitter Card, and standard `<meta>` tags |
 | `article_extract` | Default trafilatura → markdownify pipeline (always the fallback) |
 
-See `src/webgateway/post_processing/strategies/` for implementations and `src/webgateway/post_processing/pipeline.py` for the integration.
+See `src/serp_llm/post_processing/strategies/` for implementations and `src/serp_llm/post_processing/pipeline.py` for the integration.
 
-See `src/webgateway/mcp/server.py` for the implementation.
+See `src/serp_llm/mcp/server.py` for the implementation.
 
 ## Bot detection auto-routing
 
 When a provider returns a CAPTCHA or bot-detection page (Cloudflare, DataDome, etc.), the gateway automatically reroutes through a bot-solving provider like FlareSolverr or invisible_playwright — no per-domain policy rule required.
 
-Detection is pattern-based (see `BOT_BLOCK_PATTERNS` in `src/webgateway/service.py`). This is best-effort and **will need tuning** based on real-world telemetry. False negatives (blocked pages that slip through) are preferred over false positives (legitimate content misidentified as a bot block).
+Detection is pattern-based (see `BOT_BLOCK_PATTERNS` in `src/serp_llm/service.py`). This is best-effort and **will need tuning** based on real-world telemetry. False negatives (blocked pages that slip through) are preferred over false positives (legitimate content misidentified as a bot block).
 
 Future improvements:
 - Per-provider success/failure telemetry to tune detection patterns

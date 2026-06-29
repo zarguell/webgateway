@@ -6,8 +6,8 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ExtractOptions, ProviderError, ProviderMetadata
-from webgateway.providers.flaresolverr import FlareSolverrAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError, ProviderMetadata
+from serp_llm.providers.flaresolverr import FlareSolverrAdapter
 
 
 @pytest.fixture

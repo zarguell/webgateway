@@ -1,4 +1,4 @@
-"""Integration tests for Brave Search through the WebGateway.
+"""Integration tests for Brave Search through the serpLLM.
 
 These tests make real requests to the Brave Search API
 (api.search.brave.com). They auto-skip when Brave isn't healthy

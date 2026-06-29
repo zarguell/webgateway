@@ -1,7 +1,7 @@
-site_name: WebGateway
+site_name: serpLLM
 site_description: Self-hosted, policy-driven web search and extraction gateway for AI agents
-site_url: https://zarguell.github.io/webgateway
-repo_url: https://github.com/zarguell/webgateway
+site_url: https://zarguell.github.io/serp_llm
+repo_url: https://github.com/zarguell/serp_llm
 edit_uri: edit/main/docs-src/docs/
 theme:
   name: material

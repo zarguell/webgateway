@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from webgateway.config import DLPPolicy, DLPRule
-from webgateway.dlp.luhn import is_valid_luhn
-from webgateway.dlp.middleware import DlpBlockedError, DlpMiddleware
-from webgateway.dlp.scanner import DlpMatch, DlpScanner
+from serp_llm.config import DLPPolicy, DLPRule
+from serp_llm.dlp.luhn import is_valid_luhn
+from serp_llm.dlp.middleware import DlpBlockedError, DlpMiddleware
+from serp_llm.dlp.scanner import DlpMatch, DlpScanner
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import webgateway.config as cfg
+import serp_llm.config as cfg
 
 
 class TestPromptInjectionConfig:
@@ -101,7 +101,7 @@ class TestPromptInjectionConfig:
 
 class TestInjectionTypes:
     def test_injection_blocked_error_carries_metadata(self):
-        from webgateway.injection.types import InjectionBlockedError
+        from serp_llm.injection.types import InjectionBlockedError
 
         err = InjectionBlockedError(
             url="https://evil.com",
@@ -117,7 +117,7 @@ class TestInjectionTypes:
         assert "prompt injection" in str(err).lower()
 
     def test_injection_detection_result_defaults(self):
-        from webgateway.injection.types import InjectionDetectionResult
+        from serp_llm.injection.types import InjectionDetectionResult
 
         result = InjectionDetectionResult()
         assert result.checked is False
@@ -131,7 +131,7 @@ class TestInjectionTypes:
         assert result.scrubbed_segments == 0
 
     def test_injection_detection_result_detected(self):
-        from webgateway.injection.types import InjectionDetectionResult
+        from serp_llm.injection.types import InjectionDetectionResult
 
         result = InjectionDetectionResult(
             checked=True,
@@ -151,12 +151,12 @@ class TestInjectionTypes:
 
 class TestInjectionSchemas:
     def test_prompt_injection_override_defaults(self):
-        from webgateway.schemas import PromptInjectionOverride
+        from serp_llm.schemas import PromptInjectionOverride
         override = PromptInjectionOverride()
         assert override.skip is False
 
     def test_prompt_injection_info_defaults(self):
-        from webgateway.schemas import PromptInjectionInfo
+        from serp_llm.schemas import PromptInjectionInfo
         info = PromptInjectionInfo()
         assert info.checked is False
         assert info.detected is False
@@ -164,7 +164,7 @@ class TestInjectionSchemas:
         assert info.action_taken == "none"
 
     def test_extract_request_accepts_prompt_injection_override(self):
-        from webgateway.schemas import ExtractRequest, PromptInjectionOverride
+        from serp_llm.schemas import ExtractRequest, PromptInjectionOverride
         req = ExtractRequest(
             url="https://example.com",
             prompt_injection=PromptInjectionOverride(skip=True),
@@ -173,12 +173,12 @@ class TestInjectionSchemas:
         assert req.prompt_injection.skip is True
 
     def test_extract_request_prompt_injection_optional(self):
-        from webgateway.schemas import ExtractRequest
+        from serp_llm.schemas import ExtractRequest
         req = ExtractRequest(url="https://example.com")
         assert req.prompt_injection is None
 
     def test_extract_response_accepts_prompt_injection_info(self):
-        from webgateway.schemas import ExtractResponse, PromptInjectionInfo
+        from serp_llm.schemas import ExtractResponse, PromptInjectionInfo
         resp = ExtractResponse(
             content="text",
             url="https://example.com",

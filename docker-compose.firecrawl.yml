@@ -2,7 +2,7 @@
 # Self-hosted Firecrawl override
 # =============================================================================
 # Adds a local Firecrawl stack (API + Playwright + Redis + RabbitMQ + Postgres)
-# to the WebGateway compose project.
+# to the serpLLM compose project.
 #
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.firecrawl.yml up

@@ -34,8 +34,8 @@ except Exception as exc:
 # Build a real LLMJudge
 # ---------------------------------------------------------------------------
 
-from webgateway.config import LLMJudgeConfig  # noqa: E402
-from webgateway.judge import FailedProvider, LLMJudge  # noqa: E402
+from serp_llm.config import LLMJudgeConfig  # noqa: E402
+from serp_llm.judge import FailedProvider, LLMJudge  # noqa: E402
 
 judge_cfg = LLMJudgeConfig(
     enabled=True,

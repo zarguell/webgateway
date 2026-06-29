@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Usage — serpLLM Admin{% endblock %}
+{% set active_page = "usage" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Usage</h1>
+    <div class="flex space-x-2">
+      <select id="range-selector" onchange="changeRange(this.value)"
+              class="px-3 py-2 border border-gray-300 rounded-md text-sm">
+        <option value="24h" {% if range == '24h' %}selected{% endif %}>Last 24 hours</option>
+        <option value="7d" {% if range == '7d' %}selected{% endif %}>Last 7 days</option>
+        <option value="30d" {% if range == '30d' %}selected{% endif %}>Last 30 days</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Per-Provider Stats -->
+  <div class="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
+    <div class="px-4 py-3 border-b bg-gray-50">
+      <h2 class="text-sm font-semibold text-gray-700">Per Provider</h2>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calls</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Errors</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Error Rate</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">P50 Latency</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">P95 Latency</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cost Units</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for p in provider_stats %}
+        <tr>
+          <td class="px-4 py-3 text-sm font-medium">{{ p.provider }}</td>
+          <td class="px-4 py-3 text-sm">{{ p.calls }}</td>
+          <td class="px-4 py-3 text-sm">{{ p.errors }}</td>
+          <td class="px-4 py-3 text-sm">{{ "%.1f"|format(p.error_rate) }}%</td>
+          <td class="px-4 py-3 text-sm">{{ "%.0f"|format(p.p50_latency) }}ms</td>
+          <td class="px-4 py-3 text-sm">{{ "%.0f"|format(p.p95_latency) }}ms</td>
+          <td class="px-4 py-3 text-sm">{{ "%.1f"|format(p.cost_units) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not provider_stats %}
+    <div class="p-6 text-center text-gray-400 text-sm">No usage data</div>
+    {% endif %}
+  </div>
+
+  <!-- Per-Key Stats -->
+  <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <div class="px-4 py-3 border-b bg-gray-50">
+      <h2 class="text-sm font-semibold text-gray-700">Per Key</h2>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key ID</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calls</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Top Domain</th>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Top Provider</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for k in key_stats %}
+        <tr>
+          <td class="px-4 py-3 text-sm font-mono">{{ k.key_id }}</td>
+          <td class="px-4 py-3 text-sm">{{ k.calls }}</td>
+          <td class="px-4 py-3 text-sm">{{ k.top_domain or '-' }}</td>
+          <td class="px-4 py-3 text-sm">{{ k.top_provider or '-' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not key_stats %}
+    <div class="p-6 text-center text-gray-400 text-sm">No key usage data</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function changeRange(val) {
+  window.location.href = '/admin/usage?range=' + val;
+}
+</script>
+{% endblock %}

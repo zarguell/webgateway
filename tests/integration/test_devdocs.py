@@ -1,4 +1,4 @@
-"""Integration tests for DevDocs search through the WebGateway.
+"""Integration tests for DevDocs search through the serpLLM.
 
 Auto-skips when DevDocs isn't healthy on the gateway (no container,
 network unreachable).

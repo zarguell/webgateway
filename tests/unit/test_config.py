@@ -1,6 +1,6 @@
 """Tests for configuration models — rate limiting section."""
 
-from webgateway.config import GatewayConfig
+from serp_llm.config import GatewayConfig
 
 
 def test_rate_limit_config_defaults():

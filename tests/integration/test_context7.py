@@ -1,4 +1,4 @@
-"""Integration tests for Context7 docs search through the WebGateway.
+"""Integration tests for Context7 docs search through the serpLLM.
 
 Auto-skips when Context7 isn't healthy on the gateway (no API key,
 network unreachable).

@@ -1,4 +1,4 @@
-"""Integration tests for Crawl4AI through the WebGateway.
+"""Integration tests for Crawl4AI through the serpLLM.
 
 Requires the Crawl4AI sidecar running:
     docker compose -f docker-compose.test.yml --profile crawl4ai up -d

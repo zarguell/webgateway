@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from webgateway.config import PromptInjectionConfig
-from webgateway.injection.detector import InjectionDetector
+from serp_llm.config import PromptInjectionConfig
+from serp_llm.injection.detector import InjectionDetector
 
 
 class TestInjectionDetector:

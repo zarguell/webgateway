@@ -1,6 +1,6 @@
 """REST API wrapper for invisible_playwright.
 
-Exposes the stealth browser as a lightweight HTTP sidecar so the WebGateway
+Exposes the stealth browser as a lightweight HTTP sidecar so the serpLLM
 can scrape pages through the C++-patched Firefox without importing the library
 directly.
 

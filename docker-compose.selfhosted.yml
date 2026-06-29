@@ -1,7 +1,7 @@
 services:
   traefik:
     image: traefik:v3.3
-    container_name: webgateway-traefik
+    container_name: serpllm-traefik
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -23,7 +23,7 @@ services:
       - "--providers.file.filename=/dynamic/tls.yml"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=webgateway-net"
+      - "--providers.docker.network=serpllm-net"
       - "--api.dashboard=true"
       - "--api.insecure=false"
       - "--log.level=INFO"
@@ -35,11 +35,11 @@ services:
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
     networks:
-      - webgateway-net
+      - serpllm-net
 
-  webgateway:
+  serpllm:
     build: .
-    container_name: webgateway
+    container_name: serpllm
     restart: unless-stopped
     volumes:
       - ./config.selfhosted.yaml:/app/config.yaml:ro
@@ -52,23 +52,23 @@ services:
       crawl4ai:
         condition: service_healthy
     networks:
-      - webgateway-net
+      - serpllm-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.webgateway.rule=Host(`gateway.localhost`)"
-      - "traefik.http.routers.webgateway.entrypoints=websecure"
-      - "traefik.http.routers.webgateway.tls=true"
-      - "traefik.http.services.webgateway.loadbalancer.server.port=8080"
+      - "traefik.http.routers.serpllm.rule=Host(`gateway.localhost`)"
+      - "traefik.http.routers.serpllm.entrypoints=websecure"
+      - "traefik.http.routers.serpllm.tls=true"
+      - "traefik.http.services.serpllm.loadbalancer.server.port=8080"
     # No ports exposure — only accessible via Traefik
 
   searxng:
     image: searxng/searxng:latest
-    container_name: webgateway-searxng
+    container_name: serpllm-searxng
     restart: unless-stopped
     volumes:
       - ./searxng-settings.yml:/etc/searxng/settings.yml:ro
     networks:
-      - webgateway-net
+      - serpllm-net
     # NO traefik labels — internal only
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/healthz"]
@@ -79,7 +79,7 @@ services:
 
   crawl4ai:
     image: unclecode/crawl4ai:0.8.6
-    container_name: webgateway-crawl4ai
+    container_name: serpllm-crawl4ai
     restart: unless-stopped
     shm_size: "1gb"
     environment:
@@ -93,7 +93,7 @@ services:
         reservations:
           memory: 1g
     networks:
-      - webgateway-net
+      - serpllm-net
     # NO traefik labels — internal only
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11235/health"]
@@ -104,10 +104,10 @@ services:
 
   devdocs:
     image: ghcr.io/freecodecamp/devdocs:latest-alpine
-    container_name: webgateway-devdocs
+    container_name: serpllm-devdocs
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
     # NO traefik labels — internal only
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9292/ping"]
@@ -117,8 +117,8 @@ services:
       start_period: 15s
 
   invisible-playwright:
-    image: webgateway/invisible-playwright:latest
-    container_name: webgateway-ipw
+    image: serpllm/invisible-playwright:latest
+    container_name: serpllm-ipw
     restart: unless-stopped
     environment:
       - MAX_CONCURRENT_SESSIONS=3
@@ -133,7 +133,7 @@ services:
         reservations:
           memory: 512m
     networks:
-      - webgateway-net
+      - serpllm-net
     # NO traefik labels — internal only
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
@@ -146,5 +146,5 @@ volumes:
   crawl4ai-cache:
 
 networks:
-  webgateway-net:
+  serpllm-net:
     driver: bridge

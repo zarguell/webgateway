@@ -1,4 +1,4 @@
-"""Integration tests for FlareSolverr extraction through the WebGateway.
+"""Integration tests for FlareSolverr extraction through the serpLLM.
 
 These tests make real requests to the FlareSolverr service running alongside
 the gateway. They auto-skip when FlareSolverr isn't healthy, so they add

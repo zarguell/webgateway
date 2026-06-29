@@ -1,4 +1,4 @@
-"""Integration tests for DuckDuckGo search through the WebGateway.
+"""Integration tests for DuckDuckGo search through the serpLLM.
 
 These tests make real requests to DuckDuckGo via the ddgs package.
 They auto-skip when DuckDuckGo isn't healthy on the gateway.

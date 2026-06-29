@@ -4,8 +4,8 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ExtractOptions, ProviderError, ProviderMetadata
-from webgateway.providers.cdp_chrome import CdpChromeAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError, ProviderMetadata
+from serp_llm.providers.cdp_chrome import CdpChromeAdapter
 
 
 @pytest.fixture

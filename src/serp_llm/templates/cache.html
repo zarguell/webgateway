@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Cache — serpLLM Admin{% endblock %}
+{% set active_page = "cache" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Cache</h1>
+
+  <!-- Cache Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <p class="text-sm text-gray-500">Total Entries</p>
+      <p class="text-2xl font-bold text-gray-900">{{ stats.total_entries }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <p class="text-sm text-gray-500">Size</p>
+      <p class="text-2xl font-bold text-gray-900">{{ (stats.size_bytes / 1024)|round(1) }} KB</p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <p class="text-sm text-gray-500">Hit Rate (24h)</p>
+      <p class="text-2xl font-bold {% if hit_rate > 50 %}text-green-600{% else %}text-yellow-600{% endif %}">
+        {{ "%.1f"|format(hit_rate) }}%
+      </p>
+    </div>
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <p class="text-sm text-gray-500">Expired Entries</p>
+      <p class="text-2xl font-bold text-gray-900">{{ stats.expired_entries }}</p>
+    </div>
+  </div>
+
+  <!-- Top Cached Domains -->
+  {% if top_domains %}
+  <div class="bg-white rounded-lg shadow-sm border p-4 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 mb-3">Top Cached Domains</h2>
+    <div class="space-y-2">
+      {% for d in top_domains %}
+      <div class="flex items-center justify-between text-sm">
+        <span class="font-mono">{{ d.domain }}</span>
+        <span class="text-gray-500">{{ d.count }} entries</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Invalidation Forms -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <!-- Invalidate by URL -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">Invalidate by URL</h2>
+      <form hx-post="/admin/cache/invalidate" hx-target="#cache-result" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="text" name="url" placeholder="https://example.com/page"
+               class="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2">
+        <button type="submit" class="bg-red-600 text-white px-4 py-1.5 rounded text-sm hover:bg-red-700">
+          Invalidate
+        </button>
+      </form>
+    </div>
+
+    <!-- Invalidate by Domain Pattern -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">Invalidate by Domain Pattern</h2>
+      <form hx-post="/admin/cache/invalidate" hx-target="#cache-result" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="text" name="url_pattern" placeholder="*.example.com/*"
+               class="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2">
+        <button type="submit" class="bg-red-600 text-white px-4 py-1.5 rounded text-sm hover:bg-red-700">
+          Invalidate
+        </button>
+      </form>
+    </div>
+
+    <!-- Invalidate by Provider -->
+    <div class="bg-white rounded-lg shadow-sm border p-4">
+      <h2 class="text-sm font-semibold text-gray-700 mb-3">Invalidate by Provider</h2>
+      <form hx-post="/admin/cache/invalidate" hx-target="#cache-result" hx-swap="innerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <select name="provider" class="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-2">
+          <option value="">Select provider...</option>
+          {% for p in providers %}
+          <option value="{{ p }}">{{ p }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="bg-red-600 text-white px-4 py-1.5 rounded text-sm hover:bg-red-700">
+          Invalidate
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="cache-result"></div>
+
+  <!-- Full Flush -->
+  <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <h2 class="text-sm font-semibold text-red-800 mb-2">Danger Zone</h2>
+    <p class="text-xs text-red-600 mb-3">Permanently delete all cached entries. This cannot be undone.</p>
+    <button hx-post="/admin/cache/flush"
+            hx-vals='{"csrf_token": "{{ csrf_token }}"}'
+            hx-confirm="Are you sure you want to flush the entire cache? This cannot be undone."
+            hx-target="#cache-result" hx-swap="innerHTML"
+            class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 font-medium">
+      Flush Entire Cache
+    </button>
+  </div>
+</div>
+{% endblock %}
