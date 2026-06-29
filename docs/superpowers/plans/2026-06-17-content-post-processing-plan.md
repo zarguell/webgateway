@@ -4,7 +4,7 @@
 
 **Goal:** Add a 4-stage post-processing pipeline that cleans raw HTML/markdown from scrape providers before returning content to the agent.
 
-**Architecture:** New `src/webgateway/post_processing/` module with staged pipeline (extraction → conversion → cleaning → dedup). Integrates into GatewayService.extract() between provider response and content quality validator. Per-provider config controls which stages run.
+**Architecture:** New `src/serp_llm/post_processing/` module with staged pipeline (extraction → conversion → cleaning → dedup). Integrates into GatewayService.extract() between provider response and content quality validator. Per-provider config controls which stages run.
 
 **Tech Stack:** Python 3.12+, trafilatura, readability-lxml, markdownify, html2text, sqlite3
 
@@ -15,7 +15,7 @@
 ### Task 1: PostProcessingConfig model
 
 **Files:**
-- Modify: `src/webgateway/config.py` (add PostProcessingConfig and related models)
+- Modify: `src/serp_llm/config.py` (add PostProcessingConfig and related models)
 
 - [ ] **Step 1: Add config models to config.py**
 
@@ -55,7 +55,7 @@ Add to `GatewayConfig`:
 
 - [ ] **Step 2: Verify config loads**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.config import GatewayConfig; cfg = GatewayConfig(); print('post_processing default:', cfg.post_processing.default.model_dump())"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.config import GatewayConfig; cfg = GatewayConfig(); print('post_processing default:', cfg.post_processing.default.model_dump())"`
 Expected: prints default extractor config
 
 - [ ] **Step 3: Run tests**
@@ -66,7 +66,7 @@ Expected: 153 passed
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/config.py && git commit -m "feat: add PostProcessingConfig model"
+git add src/serp_llm/config.py && git commit -m "feat: add PostProcessingConfig model"
 ```
 
 ---
@@ -74,8 +74,8 @@ git add src/webgateway/config.py && git commit -m "feat: add PostProcessingConfi
 ### Task 2: Extractors module
 
 **Files:**
-- Create: `src/webgateway/post_processing/__init__.py`
-- Create: `src/webgateway/post_processing/extractors.py`
+- Create: `src/serp_llm/post_processing/__init__.py`
+- Create: `src/serp_llm/post_processing/extractors.py`
 
 - [ ] **Step 1: Create package init**
 
@@ -176,13 +176,13 @@ def extract_main_content(
 
 - [ ] **Step 3: Verify module imports**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.post_processing.extractors import extract_main_content, trafilatura_extract, readability_extract; print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.post_processing.extractors import extract_main_content, trafilatura_extract, readability_extract; print('OK')"`
 Expected: prints OK
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/post_processing/ && git commit -m "feat: add content extractors (trafilatura + readability)"
+git add src/serp_llm/post_processing/ && git commit -m "feat: add content extractors (trafilatura + readability)"
 ```
 
 ---
@@ -190,7 +190,7 @@ git add src/webgateway/post_processing/ && git commit -m "feat: add content extr
 ### Task 3: Converters module
 
 **Files:**
-- Create: `src/webgateway/post_processing/converters.py`
+- Create: `src/serp_llm/post_processing/converters.py`
 
 - [ ] **Step 1: Create converters.py**
 
@@ -261,13 +261,13 @@ def convert_to_markdown(content: str, converter: str = "markdownify") -> str:
 
 - [ ] **Step 2: Verify**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.post_processing.converters import convert_to_markdown, _is_html; assert _is_html('<p>test</p>'); assert not _is_html('just text'); print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.post_processing.converters import convert_to_markdown, _is_html; assert _is_html('<p>test</p>'); assert not _is_html('just text'); print('OK')"`
 Expected: prints OK
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/post_processing/converters.py && git commit -m "feat: add HTML-to-markdown converters"
+git add src/serp_llm/post_processing/converters.py && git commit -m "feat: add HTML-to-markdown converters"
 ```
 
 ---
@@ -275,7 +275,7 @@ git add src/webgateway/post_processing/converters.py && git commit -m "feat: add
 ### Task 4: Cleaners module
 
 **Files:**
-- Create: `src/webgateway/post_processing/cleaners.py`
+- Create: `src/serp_llm/post_processing/cleaners.py`
 
 - [ ] **Step 1: Create cleaners.py**
 
@@ -330,7 +330,7 @@ def clean_markdown(
 - [ ] **Step 2: Verify**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.post_processing.cleaners import clean_markdown
+from serp_llm.post_processing.cleaners import clean_markdown
 # test whitespace collapse
 assert 'a\n\nb' in clean_markdown('a\n\n\n\nb')
 # test boilerplate removal
@@ -344,7 +344,7 @@ Expected: prints OK
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/post_processing/cleaners.py && git commit -m "feat: add markdown cleaner with boilerplate removal"
+git add src/serp_llm/post_processing/cleaners.py && git commit -m "feat: add markdown cleaner with boilerplate removal"
 ```
 
 ---
@@ -352,7 +352,7 @@ git add src/webgateway/post_processing/cleaners.py && git commit -m "feat: add m
 ### Task 5: Dedup store
 
 **Files:**
-- Create: `src/webgateway/post_processing/dedup.py`
+- Create: `src/serp_llm/post_processing/dedup.py`
 
 - [ ] **Step 1: Create dedup.py**
 
@@ -432,7 +432,7 @@ class DedupStore:
 
 Run: `source .venv/bin/activate && python -c "
 import tempfile, os
-from webgateway.post_processing.dedup import DedupStore
+from serp_llm.post_processing.dedup import DedupStore
 import asyncio
 async def test():
     store = DedupStore(tempfile.mktemp(suffix='.db'))
@@ -451,7 +451,7 @@ Expected: prints OK
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/post_processing/dedup.py && git commit -m "feat: add SHA-256 deduplication store"
+git add src/serp_llm/post_processing/dedup.py && git commit -m "feat: add SHA-256 deduplication store"
 ```
 
 ---
@@ -459,7 +459,7 @@ git add src/webgateway/post_processing/dedup.py && git commit -m "feat: add SHA-
 ### Task 6: Pipeline orchestrator
 
 **Files:**
-- Create: `src/webgateway/post_processing/pipeline.py`
+- Create: `src/serp_llm/post_processing/pipeline.py`
 
 - [ ] **Step 1: Create pipeline.py**
 
@@ -470,10 +470,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from webgateway.post_processing.cleaners import clean_markdown
-from webgateway.post_processing.converters import convert_to_markdown
-from webgateway.post_processing.dedup import DedupStore
-from webgateway.post_processing.extractors import extract_main_content
+from serp_llm.post_processing.cleaners import clean_markdown
+from serp_llm.post_processing.converters import convert_to_markdown
+from serp_llm.post_processing.dedup import DedupStore
+from serp_llm.post_processing.extractors import extract_main_content
 
 logger = logging.getLogger(__name__)
 
@@ -587,13 +587,13 @@ class PostProcessingPipeline:
 
 - [ ] **Step 2: Verify**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.post_processing.pipeline import PostProcessingPipeline, PostProcessingResult; print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.post_processing.pipeline import PostProcessingPipeline, PostProcessingResult; print('OK')"`
 Expected: prints OK
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/post_processing/pipeline.py && git commit -m "feat: add PostProcessingPipeline orchestrator"
+git add src/serp_llm/post_processing/pipeline.py && git commit -m "feat: add PostProcessingPipeline orchestrator"
 ```
 
 ---
@@ -601,12 +601,12 @@ git add src/webgateway/post_processing/pipeline.py && git commit -m "feat: add P
 ### Task 7: Schema additions + AuditEntry additions
 
 **Files:**
-- Modify: `src/webgateway/schemas.py`
-- Modify: `src/webgateway/audit.py`
+- Modify: `src/serp_llm/schemas.py`
+- Modify: `src/serp_llm/audit.py`
 
 - [ ] **Step 1: Add PostProcessingInfo + override schema to schemas.py**
 
-Append to `src/webgateway/schemas.py`:
+Append to `src/serp_llm/schemas.py`:
 
 ```python
 # ---------------------------------------------------------------------------
@@ -674,7 +674,7 @@ Extend `AuditEntry` in `audit.py`:
 - [ ] **Step 3: Verify**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.schemas import ExtractResponse, PostProcessingInfo
+from serp_llm.schemas import ExtractResponse, PostProcessingInfo
 pp = PostProcessingInfo(extractor_used='trafilatura', reduction_pct=92.5)
 resp = ExtractResponse(content='test', url='x', provider_used='p', request_id='r', latency_ms=10, post_processing=pp)
 print('OK:', resp.post_processing.extractor_used)
@@ -684,7 +684,7 @@ Expected: prints "OK: trafilatura"
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/schemas.py src/webgateway/audit.py && git commit -m "feat: add post_processing fields to ExtractResponse and AuditEntry"
+git add src/serp_llm/schemas.py src/serp_llm/audit.py && git commit -m "feat: add post_processing fields to ExtractResponse and AuditEntry"
 ```
 
 ---
@@ -692,14 +692,14 @@ git add src/webgateway/schemas.py src/webgateway/audit.py && git commit -m "feat
 ### Task 8: GatewayService integration
 
 **Files:**
-- Modify: `src/webgateway/service.py`
+- Modify: `src/serp_llm/service.py`
 
 - [ ] **Step 1: Add pipeline to GatewayService**
 
 Add import:
 
 ```python
-from webgateway.post_processing.pipeline import PostProcessingPipeline, PostProcessingResult
+from serp_llm.post_processing.pipeline import PostProcessingPipeline, PostProcessingResult
 ```
 
 Add `post_processing` parameter to `__init__`:
@@ -774,15 +774,15 @@ In the success AuditEntry construction, add:
 - [ ] **Step 5: Verify**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.main import app
+from serp_llm.main import app
 print('App loaded:', app.title)
 "`
-Expected: prints "App loaded: WebGateway"
+Expected: prints "App loaded: serpLLM"
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/webgateway/service.py && git commit -m "feat: integrate post-processing pipeline into GatewayService"
+git add src/serp_llm/service.py && git commit -m "feat: integrate post-processing pipeline into GatewayService"
 ```
 
 ---
@@ -790,7 +790,7 @@ git add src/webgateway/service.py && git commit -m "feat: integrate post-process
 ### Task 9: Wire pipeline in main.py + config.yaml
 
 **Files:**
-- Modify: `src/webgateway/main.py`
+- Modify: `src/serp_llm/main.py`
 - Modify: `config.yaml`
 
 - [ ] **Step 1: Add pipeline initialization to main.py lifespan**
@@ -798,8 +798,8 @@ git add src/webgateway/service.py && git commit -m "feat: integrate post-process
 Add imports:
 
 ```python
-from webgateway.post_processing.dedup import DedupStore
-from webgateway.post_processing.pipeline import PostProcessingPipeline
+from serp_llm.post_processing.dedup import DedupStore
+from serp_llm.post_processing.pipeline import PostProcessingPipeline
 ```
 
 After `resource_manager` initialization (or near the end of lifespan setup), add:
@@ -872,7 +872,7 @@ post_processing:
 - [ ] **Step 3: Verify**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.main import app
+from serp_llm.main import app
 print('App loaded:', app.title)
 " && source .venv/bin/activate && pytest tests/unit/ -v --tb=short 2>&1 | tail -5`
 Expected: 153 passed
@@ -880,7 +880,7 @@ Expected: 153 passed
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/main.py config.yaml && git commit -m "feat: wire post-processing pipeline into app lifespan"
+git add src/serp_llm/main.py config.yaml && git commit -m "feat: wire post-processing pipeline into app lifespan"
 ```
 
 ---
@@ -899,10 +899,10 @@ import tempfile
 
 import pytest
 
-from webgateway.post_processing.cleaners import clean_markdown
-from webgateway.post_processing.converters import convert_to_markdown
-from webgateway.post_processing.dedup import DedupStore
-from webgateway.post_processing.extractors import extract_main_content, readability_extract, trafilatura_extract
+from serp_llm.post_processing.cleaners import clean_markdown
+from serp_llm.post_processing.converters import convert_to_markdown
+from serp_llm.post_processing.dedup import DedupStore
+from serp_llm.post_processing.extractors import extract_main_content, readability_extract, trafilatura_extract
 
 
 SAMPLE_HTML = """
@@ -1038,7 +1038,7 @@ Expected: all tests pass
 - [ ] **Step 3: Run full suite + lint**
 
 Run: `source .venv/bin/activate && pytest tests/unit/ -v --tb=short 2>&1 | tail -5`
-`source .venv/bin/activate && ruff check src/webgateway/ 2>&1`
+`source .venv/bin/activate && ruff check src/serp_llm/ 2>&1`
 
 Expected: all tests pass, lint clean
 

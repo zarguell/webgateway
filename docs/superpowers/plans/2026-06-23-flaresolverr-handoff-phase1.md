@@ -15,7 +15,7 @@
 ### Task 1: Add `cookies` field to ExtractResult
 
 **Files:**
-- Modify: `src/webgateway/providers/base.py` — add `cookies` field to `ExtractResult`
+- Modify: `src/serp_llm/providers/base.py` — add `cookies` field to `ExtractResult`
 
 Add after `status_code`:
 ```python
@@ -32,7 +32,7 @@ feat(providers): add cookies field to ExtractResult
 ### Task 2: Extract cookies from FlareSolverr response
 
 **Files:**
-- Modify: `src/webgateway/providers/flaresolverr.py` — extract `solution.cookies`
+- Modify: `src/serp_llm/providers/flaresolverr.py` — extract `solution.cookies`
 
 In the `extract()` method, after extracting `html` and `final_url`:
 
@@ -65,7 +65,7 @@ feat(providers): extract cookies from FlareSolverr solution
 ### Task 3: Integrate session handoff into fallback loop
 
 **Files:**
-- Modify: `src/webgateway/service.py` — orchestrate the two-phase flow
+- Modify: `src/serp_llm/service.py` — orchestrate the two-phase flow
 
 This is the core change. In `_execute_with_fallback`, when a bot block is detected:
 

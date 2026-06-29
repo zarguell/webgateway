@@ -14,9 +14,9 @@
 
 | File | Action | Responsibility |
 |------|--------|----------------|
-| `src/webgateway/providers/crawl4ai.py` | Create | `Crawl4AIAdapter` class (extract-only, two modes) |
-| `src/webgateway/providers/registry.py` | Modify | Import + two `_create_adapter` branches (`crawl4ai`, `crawl4ai_md`) |
-| `src/webgateway/providers/__init__.py` | Modify | Add crawl4ai to docstring |
+| `src/serp_llm/providers/crawl4ai.py` | Create | `Crawl4AIAdapter` class (extract-only, two modes) |
+| `src/serp_llm/providers/registry.py` | Modify | Import + two `_create_adapter` branches (`crawl4ai`, `crawl4ai_md`) |
+| `src/serp_llm/providers/__init__.py` | Modify | Add crawl4ai to docstring |
 | `config.yaml` | Modify | Add `crawl4ai` + `crawl4ai_md` provider blocks |
 | `config.test.yaml` | Modify | Add `crawl4ai` + `crawl4ai_md` provider blocks |
 | `docker-compose.yml` | Modify | Add `crawl4ai` sidecar service |
@@ -29,7 +29,7 @@
 ### Task 1: Create Crawl4AI Adapter
 
 **Files:**
-- Create: `src/webgateway/providers/crawl4ai.py`
+- Create: `src/serp_llm/providers/crawl4ai.py`
 
 - [ ] **Step 1: Write the adapter**
 
@@ -56,7 +56,7 @@ from __future__ import annotations
 
 import httpx
 
-from webgateway.providers.base import (
+from serp_llm.providers.base import (
     ExtractOptions,
     ExtractResult,
     ProviderError,
@@ -325,13 +325,13 @@ def _coerce_optional_str(value: object) -> str | None:
 
 - [ ] **Step 2: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/providers/crawl4ai.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/providers/crawl4ai.py`
 Expected: No errors
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/providers/crawl4ai.py
+git add src/serp_llm/providers/crawl4ai.py
 git commit -m "feat: add Crawl4AI adapter with crawl and md modes"
 ```
 
@@ -340,15 +340,15 @@ git commit -m "feat: add Crawl4AI adapter with crawl and md modes"
 ### Task 2: Wire Into Provider Registry
 
 **Files:**
-- Modify: `src/webgateway/providers/registry.py:16-24` (imports)
-- Modify: `src/webgateway/providers/registry.py:130-137` (create branches)
+- Modify: `src/serp_llm/providers/registry.py:16-24` (imports)
+- Modify: `src/serp_llm/providers/registry.py:130-137` (create branches)
 
 - [ ] **Step 1: Add import**
 
-In `registry.py`, add the import after line 24 (`from webgateway.providers.tavily import TavilyAdapter`):
+In `registry.py`, add the import after line 24 (`from serp_llm.providers.tavily import TavilyAdapter`):
 
 ```python
-from webgateway.providers.crawl4ai import Crawl4AIAdapter
+from serp_llm.providers.crawl4ai import Crawl4AIAdapter
 ```
 
 - [ ] **Step 2: Add creation branches**
@@ -374,13 +374,13 @@ In `_create_adapter`, after the `exa` block (line 134), before the `logger.warni
 
 - [ ] **Step 3: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/providers/registry.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/providers/registry.py`
 Expected: No errors
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/providers/registry.py
+git add src/serp_llm/providers/registry.py
 git commit -m "feat: register crawl4ai and crawl4ai_md in provider registry"
 ```
 
@@ -389,7 +389,7 @@ git commit -m "feat: register crawl4ai and crawl4ai_md in provider registry"
 ### Task 3: Update Package Docstring
 
 **Files:**
-- Modify: `src/webgateway/providers/__init__.py`
+- Modify: `src/serp_llm/providers/__init__.py`
 
 - [ ] **Step 1: Update docstring**
 
@@ -408,13 +408,13 @@ This removes the stale references to `playwright` and `flaresolverr` that have n
 
 - [ ] **Step 2: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/providers/__init__.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/providers/__init__.py`
 Expected: No errors
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/providers/__init__.py
+git add src/serp_llm/providers/__init__.py
 git commit -m "chore: update providers docstring, remove stale playwright/flaresolverr refs"
 ```
 
@@ -518,7 +518,7 @@ After the `searxng` service block (line 30), add:
       start_period: 40s
     restart: unless-stopped
     networks:
-      - webgateway-net
+      - serpllm-net
 ```
 
 Also add `crawl4ai-cache` to the `volumes:` section at the bottom (after `cache-data:`):
@@ -557,7 +557,7 @@ After the `searxng` service block (line 38), add:
       start_period: 40s
     restart: "no"
     networks:
-      - webgateway-net
+      - serpllm-net
 ```
 
 Also add `crawl4ai-cache` to the `volumes:` section:
@@ -595,7 +595,7 @@ crawl4ai_md_available = _make_provider_skip_fixture("crawl4ai_md", "Crawl4AI MD"
 - [ ] **Step 2: Create integration test file**
 
 ```python
-"""Integration tests for Crawl4AI through the WebGateway.
+"""Integration tests for Crawl4AI through the serpLLM.
 
 Requires the Crawl4AI sidecar running:
     docker compose -f docker-compose.test.yml --profile crawl4ai up -d

@@ -345,13 +345,13 @@ Webhook payload format:
 
 | File | Change |
 |------|--------|
-| `src/webgateway/resource_manager.py` | **New** — ~300 lines |
-| `src/webgateway/config.py` | +50 lines (3 config models, 3 fields on GatewayConfig) |
-| `src/webgateway/schemas.py` | +50 lines (admin request/response models, health additions) |
-| `src/webgateway/service.py` | +20 lines (resource_manager param, record_success/usage/failure calls) |
-| `src/webgateway/routes/admin.py` | +100 lines (5 new endpoints) |
-| `src/webgateway/routes/health.py` | +10 lines (circuit_state + quota_pct in response) |
-| `src/webgateway/main.py` | +5 lines (instantiate + wire resource_manager) |
+| `src/serp_llm/resource_manager.py` | **New** — ~300 lines |
+| `src/serp_llm/config.py` | +50 lines (3 config models, 3 fields on GatewayConfig) |
+| `src/serp_llm/schemas.py` | +50 lines (admin request/response models, health additions) |
+| `src/serp_llm/service.py` | +20 lines (resource_manager param, record_success/usage/failure calls) |
+| `src/serp_llm/routes/admin.py` | +100 lines (5 new endpoints) |
+| `src/serp_llm/routes/health.py` | +10 lines (circuit_state + quota_pct in response) |
+| `src/serp_llm/main.py` | +5 lines (instantiate + wire resource_manager) |
 | `config.yaml` | +30 lines (circuit_breaker + quotas + alerts blocks) |
 | `config.test.yaml` | +5 lines (simplified circuit_breaker/test quotas) |
 | `tests/unit/test_resource_manager.py` | **New** — unit tests |

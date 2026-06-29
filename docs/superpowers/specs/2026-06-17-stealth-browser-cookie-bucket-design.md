@@ -101,7 +101,7 @@ class ExtractOptions:
 
 ## 5. Invisible Playwright Provider Adapter
 
-**File:** `src/webgateway/providers/invisible_playwright.py`
+**File:** `src/serp_llm/providers/invisible_playwright.py`
 
 Adapter for the invisible_playwright REST sidecar at `http://invisible-playwright:3001`.
 
@@ -141,7 +141,7 @@ if name == "invisible_playwright":
 
 ## 6. Session Store (Cookie Bucket)
 
-**Module:** `src/webgateway/sessions/`
+**Module:** `src/serp_llm/sessions/`
 
 ### 6.1 Session Data Model (`sessions/models.py`)
 
@@ -317,7 +317,7 @@ gateway_service = GatewayService(
 
 ## 8. Admin Session Endpoints
 
-**File:** `src/webgateway/routes/sessions_admin.py`
+**File:** `src/serp_llm/routes/sessions_admin.py`
 
 All endpoints require `verify_admin`.
 
@@ -453,7 +453,7 @@ Add to `docker-compose.yml` under `services`:
 
 ```yaml
 invisible-playwright:
-  image: webgateway/invisible-playwright:latest
+  image: serp_llm/invisible-playwright:latest
   profiles: ["stealth", "browsers"]
   ports: ["3001:3001"]
   environment:
@@ -514,20 +514,20 @@ sessions:
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/webgateway/providers/invisible_playwright.py` | CREATE | Provider adapter |
-| `src/webgateway/sessions/__init__.py` | CREATE | Package init |
-| `src/webgateway/sessions/models.py` | CREATE | Session data models |
-| `src/webgateway/sessions/store.py` | CREATE | Fernet-encrypted store |
-| `src/webgateway/sessions/manager.py` | CREATE | Session lifecycle |
-| `src/webgateway/routes/sessions_admin.py` | CREATE | Admin endpoints |
-| `src/webgateway/config.py` | MODIFY | ProviderConfig, StealthConfig, SessionsConfig |
-| `src/webgateway/providers/base.py` | MODIFY | ExtractOptions, ProviderMetadata |
-| `src/webgateway/providers/registry.py` | MODIFY | Register adapter |
-| `src/webgateway/service.py` | MODIFY | Session resolution, cache bypass |
-| `src/webgateway/schemas.py` | MODIFY | Session schemas, warnings field |
-| `src/webgateway/audit.py` | MODIFY | Session audit fields |
-| `src/webgateway/main.py` | MODIFY | Wire session manager |
-| `src/webgateway/cache/quality.py` | MODIFY | Login wall patterns |
+| `src/serp_llm/providers/invisible_playwright.py` | CREATE | Provider adapter |
+| `src/serp_llm/sessions/__init__.py` | CREATE | Package init |
+| `src/serp_llm/sessions/models.py` | CREATE | Session data models |
+| `src/serp_llm/sessions/store.py` | CREATE | Fernet-encrypted store |
+| `src/serp_llm/sessions/manager.py` | CREATE | Session lifecycle |
+| `src/serp_llm/routes/sessions_admin.py` | CREATE | Admin endpoints |
+| `src/serp_llm/config.py` | MODIFY | ProviderConfig, StealthConfig, SessionsConfig |
+| `src/serp_llm/providers/base.py` | MODIFY | ExtractOptions, ProviderMetadata |
+| `src/serp_llm/providers/registry.py` | MODIFY | Register adapter |
+| `src/serp_llm/service.py` | MODIFY | Session resolution, cache bypass |
+| `src/serp_llm/schemas.py` | MODIFY | Session schemas, warnings field |
+| `src/serp_llm/audit.py` | MODIFY | Session audit fields |
+| `src/serp_llm/main.py` | MODIFY | Wire session manager |
+| `src/serp_llm/cache/quality.py` | MODIFY | Login wall patterns |
 | `tests/unit/` | MODIFY | Tests for new modules |
 | `config.yaml` | MODIFY | Stealth config, session config |
 | `docker-compose.yml` | MODIFY | Stealth profile service |

@@ -29,7 +29,7 @@ Add a provider-agnostic 4-stage content post-processing pipeline that cleans raw
 
 ## 2. Architecture
 
-New module `src/webgateway/post_processing/` with one class per stage concern:
+New module `src/serp_llm/post_processing/` with one class per stage concern:
 
 ```
 GatewayService.extract()
@@ -51,7 +51,7 @@ Response Normalizer
 ### Module layout
 
 ```
-src/webgateway/post_processing/
+src/serp_llm/post_processing/
   __init__.py
   pipeline.py     # PostProcessingPipeline — orchestrates stages
   extractors.py   # trafilatura + readability wrappers
@@ -174,17 +174,17 @@ The quality validator then runs on `result.content` (which is now processed, not
 
 | File | Action |
 |------|--------|
-| `src/webgateway/post_processing/__init__.py` | CREATE |
-| `src/webgateway/post_processing/pipeline.py` | CREATE |
-| `src/webgateway/post_processing/extractors.py` | CREATE |
-| `src/webgateway/post_processing/converters.py` | CREATE |
-| `src/webgateway/post_processing/cleaners.py` | CREATE |
-| `src/webgateway/post_processing/dedup.py` | CREATE |
-| `src/webgateway/config.py` | MODIFY — PostProcessingConfig |
-| `src/webgateway/schemas.py` | MODIFY — PostProcessingInfo |
-| `src/webgateway/service.py` | MODIFY — pipeline integration |
-| `src/webgateway/audit.py` | MODIFY — extraction audit fields |
-| `src/webgateway/main.py` | MODIFY — wire pipeline |
+| `src/serp_llm/post_processing/__init__.py` | CREATE |
+| `src/serp_llm/post_processing/pipeline.py` | CREATE |
+| `src/serp_llm/post_processing/extractors.py` | CREATE |
+| `src/serp_llm/post_processing/converters.py` | CREATE |
+| `src/serp_llm/post_processing/cleaners.py` | CREATE |
+| `src/serp_llm/post_processing/dedup.py` | CREATE |
+| `src/serp_llm/config.py` | MODIFY — PostProcessingConfig |
+| `src/serp_llm/schemas.py` | MODIFY — PostProcessingInfo |
+| `src/serp_llm/service.py` | MODIFY — pipeline integration |
+| `src/serp_llm/audit.py` | MODIFY — extraction audit fields |
+| `src/serp_llm/main.py` | MODIFY — wire pipeline |
 | `config.yaml` | MODIFY — post_processing section |
 | `tests/unit/` | MODIFY — pipeline unit tests |
 | `pyproject.toml` | MODIFY — add deps |

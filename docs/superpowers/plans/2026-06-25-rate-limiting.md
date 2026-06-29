@@ -13,12 +13,12 @@
 ### Task 1: Rate limiter config models
 
 **Files:**
-- Modify: `src/webgateway/config.py` (add config models after `CacheConfig`)
+- Modify: `src/serp_llm/config.py` (add config models after `CacheConfig`)
 - Test: `tests/unit/test_config.py` (new test class)
 
 - [ ] **Step 1: Add RateLimitConfig models to config.py**
 
-Insert after the `CacheConfig` class (line 262) in `src/webgateway/config.py`:
+Insert after the `CacheConfig` class (line 262) in `src/serp_llm/config.py`:
 
 ```python
 class RateLimitByKey(BaseModel):
@@ -56,7 +56,7 @@ Create `tests/unit/test_config.py`:
 ```python
 """Tests for configuration models — rate limiting section."""
 
-from webgateway.config import GatewayConfig, RateLimitConfig
+from serp_llm.config import GatewayConfig, RateLimitConfig
 
 
 def test_rate_limit_config_defaults():
@@ -97,7 +97,7 @@ Expected: PASS
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/config.py tests/unit/test_config.py
+git add src/serp_llm/config.py tests/unit/test_config.py
 git commit -m "feat(config): add rate limiting config models"
 ```
 
@@ -106,22 +106,22 @@ git commit -m "feat(config): add rate limiting config models"
 ### Task 2: Rate limiter implementation
 
 **Files:**
-- Create: `src/webgateway/ratelimit/__init__.py`
-- Create: `src/webgateway/ratelimit/limiter.py`
+- Create: `src/serp_llm/ratelimit/__init__.py`
+- Create: `src/serp_llm/ratelimit/limiter.py`
 
 - [ ] **Step 1: Create ratelimit package**
 
 ```bash
-mkdir -p src/webgateway/ratelimit
+mkdir -p src/serp_llm/ratelimit
 ```
 
-Create `src/webgateway/ratelimit/__init__.py`:
+Create `src/serp_llm/ratelimit/__init__.py`:
 
 ```python
 """Sliding window rate limiter with per-key and per-IP tracking."""
 ```
 
-Create `src/webgateway/ratelimit/limiter.py`:
+Create `src/serp_llm/ratelimit/limiter.py`:
 
 ```python
 """Sliding window rate limiter implementation.
@@ -137,7 +137,7 @@ import logging
 import time
 from collections import defaultdict, deque
 
-from webgateway.config import RateLimitConfig
+from serp_llm.config import RateLimitConfig
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +251,7 @@ class SlidingWindowRateLimiter:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/webgateway/ratelimit/
+git add src/serp_llm/ratelimit/
 git commit -m "feat(ratelimit): sliding window rate limiter implementation"
 ```
 
@@ -273,8 +273,8 @@ import asyncio
 
 import pytest
 
-from webgateway.config import RateLimitConfig
-from webgateway.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
+from serp_llm.config import RateLimitConfig
+from serp_llm.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
 
 
 @pytest.fixture()
@@ -382,13 +382,13 @@ git commit -m "test(ratelimit): unit tests for sliding window rate limiter"
 ### Task 4: Rate limiting middleware
 
 **Files:**
-- Create: `src/webgateway/ratelimit/middleware.py`
-- Modify: `src/webgateway/main.py` (wire middleware)
+- Create: `src/serp_llm/ratelimit/middleware.py`
+- Modify: `src/serp_llm/main.py` (wire middleware)
 - Modify: `docs-src/docs/configuration/config-yaml.md` (document new section)
 
 - [ ] **Step 1: Write the rate limiting middleware**
 
-Create `src/webgateway/ratelimit/middleware.py`:
+Create `src/serp_llm/ratelimit/middleware.py`:
 
 ```python
 """FastAPI middleware that enforces per-key and per-IP rate limits."""
@@ -400,8 +400,8 @@ import logging
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
-from webgateway.config import ConfigManager
-from webgateway.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
+from serp_llm.config import ConfigManager
+from serp_llm.ratelimit.limiter import RateLimitExceeded, SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -478,11 +478,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 - [ ] **Step 2: Wire the middleware in main.py**
 
-In `src/webgateway/main.py`, add an import after the other middleware imports:
+In `src/serp_llm/main.py`, add an import after the other middleware imports:
 
 ```python
-from webgateway.ratelimit.limiter import SlidingWindowRateLimiter
-from webgateway.ratelimit.middleware import RateLimitMiddleware
+from serp_llm.ratelimit.limiter import SlidingWindowRateLimiter
+from serp_llm.ratelimit.middleware import RateLimitMiddleware
 ```
 
 Inside the `lifespan()` function, after creating `config_manager` (around line 70) AND after the rate limiter middleware has been added to the app in `create_app()`, initialize the limiter and start its cleanup:
@@ -522,7 +522,7 @@ In `create_app()`, add the middleware after route inclusion (around line 232):
 
 The middleware reads its config from `app.state.rate_limiter` at runtime, so it doesn't need the config_manager at construction time.
 
-Update the middleware to read from `app.state` rather than requiring a config_manager in `__init__`. In `src/webgateway/ratelimit/middleware.py`, replace the class with:
+Update the middleware to read from `app.state` rather than requiring a config_manager in `__init__`. In `src/serp_llm/ratelimit/middleware.py`, replace the class with:
 
 ```python
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -617,7 +617,7 @@ rate_limiting:
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/ratelimit/middleware.py src/webgateway/main.py docs-src/docs/configuration/config-yaml.md
+git add src/serp_llm/ratelimit/middleware.py src/serp_llm/main.py docs-src/docs/configuration/config-yaml.md
 git commit -m "feat(ratelimit): middleware wiring and config docs"
 ```
 

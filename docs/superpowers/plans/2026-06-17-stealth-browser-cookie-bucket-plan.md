@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add invisible_playwright stealth browser provider adapter + Fernet-encrypted session store with admin UI to WebGateway.
+**Goal:** Add invisible_playwright stealth browser provider adapter + Fernet-encrypted session store with admin UI to serpLLM.
 
-**Architecture:** New `src/webgateway/sessions/` module handles session CRUD and validation. New `src/webgateway/providers/invisible_playwright.py` adapter calls the browser sidecar REST API. GatewayService gains session resolution and cache-bypass logic. Admin routes expose session CRUD. All new fields on existing config/schema models are optional with safe defaults.
+**Architecture:** New `src/serp_llm/sessions/` module handles session CRUD and validation. New `src/serp_llm/providers/invisible_playwright.py` adapter calls the browser sidecar REST API. GatewayService gains session resolution and cache-bypass logic. Admin routes expose session CRUD. All new fields on existing config/schema models are optional with safe defaults.
 
 **Tech Stack:** Python 3.12+, FastAPI, Pydantic v2, httpx, Fernet (cryptography), pytest
 
@@ -15,13 +15,13 @@
 ### Task 1: Config model extensions
 
 **Files:**
-- Modify: `src/webgateway/config.py:96-103` (ProviderConfig)
-- Modify: `src/webgateway/config.py:176-179` (SessionsConfig)
-- Modify: `src/webgateway/config.py:250-264` (GatewayConfig — add StealthConfig)
+- Modify: `src/serp_llm/config.py:96-103` (ProviderConfig)
+- Modify: `src/serp_llm/config.py:176-179` (SessionsConfig)
+- Modify: `src/serp_llm/config.py:250-264` (GatewayConfig — add StealthConfig)
 
 - [ ] **Step 1: Add StealthConfig model and extend ProviderConfig/SessionsConfig**
 
-Edit `src/webgateway/config.py`:
+Edit `src/serp_llm/config.py`:
 
 Add `Literal` import (already imported at top of file).
 
@@ -97,7 +97,7 @@ Add `StealthConfig` field to `GatewayConfig` (after `sessions` line):
 
 - [ ] **Step 2: Verify config loads with new fields**
 
-Run: `python -c "from webgateway.config import GatewayConfig; cfg = GatewayConfig(); print('stealth:', cfg.stealth.model_dump()); print('sessions:', cfg.sessions.model_dump())"`
+Run: `python -c "from serp_llm.config import GatewayConfig; cfg = GatewayConfig(); print('stealth:', cfg.stealth.model_dump()); print('sessions:', cfg.sessions.model_dump())"`
 Expected: prints default values for both config sections
 
 - [ ] **Step 3: Run existing tests to confirm no regressions**
@@ -108,7 +108,7 @@ Expected: all existing tests pass
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/config.py
+git add src/serp_llm/config.py
 git commit -m "feat: add StealthConfig, extend ProviderConfig and SessionsConfig"
 ```
 
@@ -117,12 +117,12 @@ git commit -m "feat: add StealthConfig, extend ProviderConfig and SessionsConfig
 ### Task 2: Base model extensions (ExtractOptions + ProviderMetadata)
 
 **Files:**
-- Modify: `src/webgateway/providers/base.py:26-31` (ExtractOptions)
-- Modify: `src/webgateway/providers/base.py:66-78` (ProviderMetadata)
+- Modify: `src/serp_llm/providers/base.py:26-31` (ExtractOptions)
+- Modify: `src/serp_llm/providers/base.py:66-78` (ProviderMetadata)
 
 - [ ] **Step 1: Add fields to ExtractOptions**
 
-Edit `src/webgateway/providers/base.py`. Add `session_id`, `fingerprint_id`, `user_agent` to `ExtractOptions`:
+Edit `src/serp_llm/providers/base.py`. Add `session_id`, `fingerprint_id`, `user_agent` to `ExtractOptions`:
 
 ```python
 @dataclass
@@ -139,7 +139,7 @@ class ExtractOptions:
 
 - [ ] **Step 2: Add fields to ProviderMetadata**
 
-Edit `src/webgateway/providers/base.py`. Add after `capabilities` in `ProviderMetadata`:
+Edit `src/serp_llm/providers/base.py`. Add after `capabilities` in `ProviderMetadata`:
 
 ```python
     warnings: list[str] = field(default_factory=list)
@@ -152,13 +152,13 @@ Edit `src/webgateway/providers/base.py`. Add after `capabilities` in `ProviderMe
 
 - [ ] **Step 3: Verify imports still work**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.providers.base import ExtractOptions, ProviderMetadata; e = ExtractOptions(); p = ProviderMetadata(name='test'); print('OK:', e.session_id, p.warnings)"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.providers.base import ExtractOptions, ProviderMetadata; e = ExtractOptions(); p = ProviderMetadata(name='test'); print('OK:', e.session_id, p.warnings)"`
 Expected: prints `OK: None []`
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/providers/base.py
+git add src/serp_llm/providers/base.py
 git commit -m "feat: add session/fingerprint fields to ExtractOptions and ProviderMetadata"
 ```
 
@@ -167,12 +167,12 @@ git commit -m "feat: add session/fingerprint fields to ExtractOptions and Provid
 ### Task 3: Session models
 
 **Files:**
-- Create: `src/webgateway/sessions/__init__.py`
-- Create: `src/webgateway/sessions/models.py`
+- Create: `src/serp_llm/sessions/__init__.py`
+- Create: `src/serp_llm/sessions/models.py`
 
 - [ ] **Step 1: Create package init**
 
-Write `src/webgateway/sessions/__init__.py`:
+Write `src/serp_llm/sessions/__init__.py`:
 
 ```python
 """Encrypted session store for authenticated browser sessions."""
@@ -180,7 +180,7 @@ Write `src/webgateway/sessions/__init__.py`:
 
 - [ ] **Step 2: Create session data models**
 
-Write `src/webgateway/sessions/models.py`:
+Write `src/serp_llm/sessions/models.py`:
 
 ```python
 from __future__ import annotations
@@ -254,13 +254,13 @@ def session_to_info(data: SessionData) -> SessionInfo:
 
 - [ ] **Step 3: Verify module imports**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.sessions.models import SessionData, CookieEntry, session_to_info; print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.sessions.models import SessionData, CookieEntry, session_to_info; print('OK')"`
 Expected: prints `OK`
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/sessions/__init__.py src/webgateway/sessions/models.py
+git add src/serp_llm/sessions/__init__.py src/serp_llm/sessions/models.py
 git commit -m "feat: add session data models"
 ```
 
@@ -269,7 +269,7 @@ git commit -m "feat: add session data models"
 ### Task 4: Session store (Fernet-encrypted file CRUD)
 
 **Files:**
-- Create: `src/webgateway/sessions/store.py`
+- Create: `src/serp_llm/sessions/store.py`
 - Create: `tests/unit/__init__.py` (if missing)
 - Create: `tests/unit/test_session_store.py`
 
@@ -287,8 +287,8 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
-from webgateway.sessions.models import CookieEntry, SessionData, session_to_info
-from webgateway.sessions.store import SessionNotFound, SessionStore
+from serp_llm.sessions.models import CookieEntry, SessionData, session_to_info
+from serp_llm.sessions.store import SessionNotFound, SessionStore
 
 
 @pytest.fixture
@@ -379,7 +379,7 @@ Expected: ImportError for `SessionStore`
 
 - [ ] **Step 3: Implement SessionStore**
 
-Write `src/webgateway/sessions/store.py`:
+Write `src/serp_llm/sessions/store.py`:
 
 ```python
 from __future__ import annotations
@@ -391,7 +391,7 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from webgateway.sessions.models import (
+from serp_llm.sessions.models import (
     CookieEntry,
     SessionData,
     SessionInfo,
@@ -515,7 +515,7 @@ Expected: all 7 tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/sessions/store.py tests/unit/test_session_store.py
+git add src/serp_llm/sessions/store.py tests/unit/test_session_store.py
 git commit -m "feat: add Fernet-encrypted SessionStore"
 ```
 
@@ -524,11 +524,11 @@ git commit -m "feat: add Fernet-encrypted SessionStore"
 ### Task 5: Session schemas for admin API
 
 **Files:**
-- Modify: `src/webgateway/schemas.py` (add session Pydantic models)
+- Modify: `src/serp_llm/schemas.py` (add session Pydantic models)
 
 - [ ] **Step 1: Add session schemas to schemas.py**
 
-Append to `src/webgateway/schemas.py` before the final newline:
+Append to `src/serp_llm/schemas.py` before the final newline:
 
 ```python
 # ---------------------------------------------------------------------------
@@ -607,13 +607,13 @@ Actually let me check — the existing schemas use `str | None` not datetime. Bu
 
 - [ ] **Step 2: Verify schemas load**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.schemas import SessionCreateRequest, SessionInfoResponse, SessionStatusResponse; print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.schemas import SessionCreateRequest, SessionInfoResponse, SessionStatusResponse; print('OK')"`
 Expected: prints `OK`
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/schemas.py
+git add src/serp_llm/schemas.py
 git commit -m "feat: add session admin API schemas"
 ```
 
@@ -622,7 +622,7 @@ git commit -m "feat: add session admin API schemas"
 ### Task 6: Session error + manager
 
 **Files:**
-- Create: `src/webgateway/sessions/manager.py`
+- Create: `src/serp_llm/sessions/manager.py`
 - Create: `tests/unit/test_session_manager.py`
 
 - [ ] **Step 1: Write failing test for SessionManager**
@@ -638,9 +638,9 @@ from pathlib import Path
 import pytest
 from cryptography.fernet import Fernet
 
-from webgateway.sessions.manager import SessionError, SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData
-from webgateway.sessions.store import SessionStore
+from serp_llm.sessions.manager import SessionError, SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionStore
 
 
 @pytest.fixture
@@ -660,7 +660,7 @@ def store(store_path: str, key: str) -> SessionStore:
 
 @pytest.fixture
 def manager(store: SessionStore) -> SessionManager:
-    from webgateway.config import SessionsConfig
+    from serp_llm.config import SessionsConfig
     return SessionManager(store, SessionsConfig())
 
 
@@ -771,7 +771,7 @@ Expected: ImportError for SessionManager
 
 - [ ] **Step 3: Implement SessionManager**
 
-Write `src/webgateway/sessions/manager.py`:
+Write `src/serp_llm/sessions/manager.py`:
 
 ```python
 from __future__ import annotations
@@ -780,8 +780,8 @@ import time
 import fnmatch
 from urllib.parse import urlparse
 
-from webgateway.sessions.models import SessionData, SessionInfo
-from webgateway.sessions.store import SessionNotFound, SessionStore
+from serp_llm.sessions.models import SessionData, SessionInfo
+from serp_llm.sessions.store import SessionNotFound, SessionStore
 
 
 class SessionError(Exception):
@@ -937,7 +937,7 @@ Expected: all tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/sessions/manager.py tests/unit/test_session_manager.py
+git add src/serp_llm/sessions/manager.py tests/unit/test_session_manager.py
 git commit -m "feat: add SessionManager with validation logic"
 ```
 
@@ -946,7 +946,7 @@ git commit -m "feat: add SessionManager with validation logic"
 ### Task 7: InvisiblePlaywright provider adapter
 
 **Files:**
-- Create: `src/webgateway/providers/invisible_playwright.py`
+- Create: `src/serp_llm/providers/invisible_playwright.py`
 - Create: `tests/unit/test_invisible_playwright.py`
 
 - [ ] **Step 1: Write failing test**
@@ -960,8 +960,8 @@ import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
-from webgateway.providers.base import ExtractOptions, ProviderError, ProviderMetadata
-from webgateway.providers.invisible_playwright import InvisiblePlaywrightAdapter
+from serp_llm.providers.base import ExtractOptions, ProviderError, ProviderMetadata
+from serp_llm.providers.invisible_playwright import InvisiblePlaywrightAdapter
 
 
 @pytest.fixture
@@ -1069,14 +1069,14 @@ Expected: ImportError for InvisiblePlaywrightAdapter
 
 - [ ] **Step 3: Implement InvisiblePlaywrightAdapter**
 
-Write `src/webgateway/providers/invisible_playwright.py`:
+Write `src/serp_llm/providers/invisible_playwright.py`:
 
 ```python
 from __future__ import annotations
 
 import httpx
 
-from webgateway.providers.base import (
+from serp_llm.providers.base import (
     ExtractOptions,
     ExtractResult,
     ProviderError,
@@ -1224,7 +1224,7 @@ Expected: all tests pass
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/providers/invisible_playwright.py tests/unit/test_invisible_playwright.py
+git add src/serp_llm/providers/invisible_playwright.py tests/unit/test_invisible_playwright.py
 git commit -m "feat: add invisible_playwright provider adapter"
 ```
 
@@ -1233,16 +1233,16 @@ git commit -m "feat: add invisible_playwright provider adapter"
 ### Task 8: Register invisible_playwright in provider registry
 
 **Files:**
-- Modify: `src/webgateway/providers/registry.py`
+- Modify: `src/serp_llm/providers/registry.py`
 
 - [ ] **Step 1: Add import + registration to _create_adapter**
 
-Edit `src/webgateway/providers/registry.py`:
+Edit `src/serp_llm/providers/registry.py`:
 
 Add import at the top (after line 19):
 
 ```python
-from webgateway.providers.invisible_playwright import InvisiblePlaywrightAdapter
+from serp_llm.providers.invisible_playwright import InvisiblePlaywrightAdapter
 ```
 
 Add registration in `_create_adapter` (after the `firecrawl_selfhosted` block, before the `logger.warning` line):
@@ -1261,8 +1261,8 @@ Add registration in `_create_adapter` (after the `firecrawl_selfhosted` block, b
 - [ ] **Step 2: Verify adapter loads from registry**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.config import ConfigManager
-from webgateway.providers.registry import ProviderRegistry
+from serp_llm.config import ConfigManager
+from serp_llm.providers.registry import ProviderRegistry
 cm = ConfigManager('config.yaml', autoload=True)
 print('Configured providers:', list(cm.config.providers.keys()))
 reg = ProviderRegistry(cm)
@@ -1276,7 +1276,7 @@ Expected: invisible_playwright shows in registered providers (or isn't if not in
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/providers/registry.py
+git add src/serp_llm/providers/registry.py
 git commit -m "feat: register invisible_playwright adapter in provider registry"
 ```
 
@@ -1285,11 +1285,11 @@ git commit -m "feat: register invisible_playwright adapter in provider registry"
 ### Task 9: Extend audit entry with session fields
 
 **Files:**
-- Modify: `src/webgateway/audit.py`
+- Modify: `src/serp_llm/audit.py`
 
 - [ ] **Step 1: Add session fields to AuditEntry**
 
-Edit `src/webgateway/audit.py`:
+Edit `src/serp_llm/audit.py`:
 
 Add after `cache_invalidated: bool = False` (line ~60):
 
@@ -1307,13 +1307,13 @@ Also update the `type` literal to include future values... no, keep as `Literal[
 
 - [ ] **Step 2: Verify dataclass still works**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.audit import AuditEntry; e = AuditEntry(request_id='r1', api_key_id='k1', type='extract', url='u', provider_used='p', latency_ms=10, status='success', session_profile='sess_001'); print('OK:', e.session_profile)"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.audit import AuditEntry; e = AuditEntry(request_id='r1', api_key_id='k1', type='extract', url='u', provider_used='p', latency_ms=10, status='success', session_profile='sess_001'); print('OK:', e.session_profile)"`
 Expected: prints `OK: sess_001`
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/audit.py
+git add src/serp_llm/audit.py
 git commit -m "feat: add session and browser fields to AuditEntry"
 ```
 
@@ -1322,12 +1322,12 @@ git commit -m "feat: add session and browser fields to AuditEntry"
 ### Task 10: Provider warnings in GET /providers
 
 **Files:**
-- Modify: `src/webgateway/schemas.py:99-111` (ProviderMetadataInfo)
-- Modify: `src/webgateway/routes/providers.py` (populate new fields)
+- Modify: `src/serp_llm/schemas.py:99-111` (ProviderMetadataInfo)
+- Modify: `src/serp_llm/routes/providers.py` (populate new fields)
 
 - [ ] **Step 1: Add new fields to ProviderMetadataInfo**
 
-Edit `src/webgateway/schemas.py`. Replace `ProviderMetadataInfo` class with:
+Edit `src/serp_llm/schemas.py`. Replace `ProviderMetadataInfo` class with:
 
 ```python
 class ProviderMetadataInfo(BaseModel):
@@ -1352,7 +1352,7 @@ class ProviderMetadataInfo(BaseModel):
 
 - [ ] **Step 2: Update GET /providers route**
 
-Edit `src/webgateway/routes/providers.py`. Update the response builder to include new fields:
+Edit `src/serp_llm/routes/providers.py`. Update the response builder to include new fields:
 
 ```python
 @router.get("/providers", response_model=list[ProviderMetadataInfo])
@@ -1388,7 +1388,7 @@ async def list_providers(
 - [ ] **Step 3: Verify providers endpoint still works**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.schemas import ProviderMetadataInfo
+from serp_llm.schemas import ProviderMetadataInfo
 p = ProviderMetadataInfo(name='test', self_hosted=False, warnings=['test warning'], stealth=True, engine='firefox')
 print('OK:', p.model_dump())
 "`
@@ -1397,7 +1397,7 @@ Expected: prints ProviderMetadataInfo with warnings/stealth/engine fields
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/schemas.py src/webgateway/routes/providers.py
+git add src/serp_llm/schemas.py src/serp_llm/routes/providers.py
 git commit -m "feat: add provider warnings and metadata fields to GET /providers"
 ```
 
@@ -1406,8 +1406,8 @@ git commit -m "feat: add provider warnings and metadata fields to GET /providers
 ### Task 11: Admin session routes
 
 **Files:**
-- Create: `src/webgateway/routes/sessions_admin.py`
-- Modify: `src/webgateway/main.py` (include router)
+- Create: `src/serp_llm/routes/sessions_admin.py`
+- Modify: `src/serp_llm/main.py` (include router)
 - Create: `tests/unit/test_session_admin.py`
 
 - [ ] **Step 1: Write failing test**
@@ -1424,10 +1424,10 @@ import pytest
 from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 
-from webgateway.main import create_app
-from webgateway.sessions.manager import SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData
-from webgateway.sessions.store import SessionStore
+from serp_llm.main import create_app
+from serp_llm.sessions.manager import SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionStore
 
 
 @pytest.fixture
@@ -1461,8 +1461,8 @@ def app(store: SessionStore) -> TestClient:
     )
 
     # Override auth dependencies for testing
-    from webgateway.auth import verify_admin
-    from webgateway.config import AuthKey
+    from serp_llm.auth import verify_admin
+    from serp_llm.config import AuthKey
     application.dependency_overrides[verify_admin] = lambda: AuthKey(
         id="test_admin", secret="test", admin=True
     )
@@ -1545,7 +1545,7 @@ Expected: ImportError for the admin router
 
 - [ ] **Step 3: Implement admin session routes**
 
-Write `src/webgateway/routes/sessions_admin.py`:
+Write `src/serp_llm/routes/sessions_admin.py`:
 
 ```python
 from __future__ import annotations
@@ -1555,9 +1555,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from webgateway.auth import verify_admin
-from webgateway.config import AuthKey
-from webgateway.schemas import (
+from serp_llm.auth import verify_admin
+from serp_llm.config import AuthKey
+from serp_llm.schemas import (
     CookieEntrySchema,
     SessionCreateRequest,
     SessionErrorResponse,
@@ -1566,9 +1566,9 @@ from webgateway.schemas import (
     SessionRefreshRequest,
     SessionStatusResponse,
 )
-from webgateway.sessions.manager import SessionError, SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData, session_to_info
-from webgateway.sessions.store import SessionStore
+from serp_llm.sessions.manager import SessionError, SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData, session_to_info
+from serp_llm.sessions.store import SessionStore
 
 router = APIRouter(tags=["admin"])
 
@@ -1726,10 +1726,10 @@ async def refresh_session(
 
 - [ ] **Step 4: Add router to main.py**
 
-Append to `src/webgateway/main.py` imports:
+Append to `src/serp_llm/main.py` imports:
 
 ```python
-from webgateway.routes.sessions_admin import router as sessions_admin_router
+from serp_llm.routes.sessions_admin import router as sessions_admin_router
 ```
 
 Add after `app.include_router(admin_router)`:
@@ -1767,7 +1767,7 @@ Add to `main.py` before `app.include_router(sessions_admin_router)` or after the
 Need to add import for `SessionError` in main.py:
 
 ```python
-from webgateway.sessions.manager import SessionError
+from serp_llm.sessions.manager import SessionError
 ```
 
 - [ ] **Step 6: Run test to verify it passes**
@@ -1778,7 +1778,7 @@ Expected: all tests pass
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/webgateway/routes/sessions_admin.py src/webgateway/main.py tests/unit/test_session_admin.py
+git add src/serp_llm/routes/sessions_admin.py src/serp_llm/main.py tests/unit/test_session_admin.py
 git commit -m "feat: add admin session CRUD endpoints"
 ```
 
@@ -1787,14 +1787,14 @@ git commit -m "feat: add admin session CRUD endpoints"
 ### Task 12: GatewayService integration (session resolution, cache bypass, login wall)
 
 **Files:**
-- Modify: `src/webgateway/service.py`
+- Modify: `src/serp_llm/service.py`
 
 - [ ] **Step 1: Add session_manager parameter to GatewayService**
 
-Edit `src/webgateway/service.py` `__init__`:
+Edit `src/serp_llm/service.py` `__init__`:
 
 ```python
-from webgateway.sessions.manager import SessionError, SessionManager
+from serp_llm.sessions.manager import SessionError, SessionManager
 ```
 
 Add parameter to `__init__`:
@@ -1997,7 +1997,7 @@ Expected: all existing tests pass (new session tests also pass)
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/webgateway/service.py
+git add src/serp_llm/service.py
 git commit -m "feat: integrate session resolution, cache bypass, and login wall detection into GatewayService"
 ```
 
@@ -2006,17 +2006,17 @@ git commit -m "feat: integrate session resolution, cache bypass, and login wall 
 ### Task 13: Wire SessionManager into main.py
 
 **Files:**
-- Modify: `src/webgateway/main.py`
+- Modify: `src/serp_llm/main.py`
 
 - [ ] **Step 1: Add session initialization to lifespan**
 
-Edit `src/webgateway/main.py`:
+Edit `src/serp_llm/main.py`:
 
 Add imports after existing session import:
 
 ```python
-from webgateway.sessions.manager import SessionManager, SessionError
-from webgateway.sessions.store import SessionStore
+from serp_llm.sessions.manager import SessionManager, SessionError
+from serp_llm.sessions.store import SessionStore
 ```
 
 In the `lifespan` function, after `app.state.resource_manager = resource_manager` (line ~78), add:
@@ -2058,13 +2058,13 @@ Update `GatewayService` constructor call to pass `session_manager`:
 
 - [ ] **Step 2: Verify app starts**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.main import app; print('App loaded:', app.title)"`
-Expected: prints `App loaded: WebGateway`
+Run: `source .venv/bin/activate && python -c "from serp_llm.main import app; print('App loaded:', app.title)"`
+Expected: prints `App loaded: serpLLM`
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/main.py
+git add src/serp_llm/main.py
 git commit -m "feat: wire SessionStore and SessionManager into application lifespan"
 ```
 
@@ -2136,7 +2136,7 @@ If it exists, add after the `services:` section appropriate placement:
 ```yaml
   # --- Stealth browser (C++-patched Firefox 150) ---
   invisible-playwright:
-    image: webgateway/invisible-playwright:latest
+    image: serp_llm/invisible-playwright:latest
     profiles: ["stealth", "browsers"]
     ports: ["3001:3001"]
     environment:
@@ -2164,7 +2164,7 @@ And add `STEALTH_PLAYWRIGHT_URL` to the gateway service environment:
 - [ ] **Step 3: Verify config loads**
 
 Run: `source .venv/bin/activate && python -c "
-from webgateway.config import load_config
+from serp_llm.config import load_config
 cm = load_config('config.yaml')
 cfg = cm.config
 print('stealth:', cfg.stealth.model_dump())
@@ -2201,10 +2201,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from cryptography.fernet import Fernet
 
-from webgateway.config import ConfigManager, GatewayConfig, SessionsConfig
-from webgateway.sessions.manager import SessionError, SessionManager
-from webgateway.sessions.models import CookieEntry, SessionData
-from webgateway.sessions.store import SessionStore
+from serp_llm.config import ConfigManager, GatewayConfig, SessionsConfig
+from serp_llm.sessions.manager import SessionError, SessionManager
+from serp_llm.sessions.models import CookieEntry, SessionData
+from serp_llm.sessions.store import SessionStore
 
 
 @pytest.fixture
@@ -2359,7 +2359,7 @@ Expected: all tests pass
 
 - [ ] **Step 4: Run lint check**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/ 2>&1`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/ 2>&1`
 Expected: no lint errors (or only pre-existing ones)
 
 - [ ] **Step 5: Commit**

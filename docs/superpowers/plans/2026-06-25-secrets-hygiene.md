@@ -78,13 +78,13 @@ docker-compose*.yml
 - [ ] **Step 2: Verify .dockerignore works**
 
 ```bash
-docker build -t webgateway-test-ignore -f Dockerfile . 2>&1 | tail -5
+docker build -t serpllm-test-ignore -f Dockerfile . 2>&1 | tail -5
 ```
 
 Expected: Build succeeds, no `.env` file leakage. Compare image size:
 
 ```bash
-docker images webgateway-test-ignore --format "{{.Size}}"
+docker images serpllm-test-ignore --format "{{.Size}}"
 ```
 
 - [ ] **Step 3: Commit**
@@ -99,11 +99,11 @@ git commit -m "build: add .dockerignore to exclude secrets and build artifacts f
 ### Task 2: Add startup credential check
 
 **Files:**
-- Modify: `src/webgateway/main.py` (add credential check in lifespan)
+- Modify: `src/serp_llm/main.py` (add credential check in lifespan)
 
 - [ ] **Step 1: Add known-default credential detection**
 
-In `src/webgateway/main.py`, add a helper function before `lifespan()` and call it during startup.
+In `src/serp_llm/main.py`, add a helper function before `lifespan()` and call it during startup.
 
 Add after the imports (before `lifespan`):
 
@@ -175,8 +175,8 @@ Create `tests/unit/test_startup_checks.py`:
 
 from __future__ import annotations
 
-from webgateway.config import AuthConfig, GatewayConfig
-from webgateway.main import _check_known_default_secrets
+from serp_llm.config import AuthConfig, GatewayConfig
+from serp_llm.main import _check_known_default_secrets
 
 
 def test_known_default_secret_logs_warning(caplog):
@@ -222,7 +222,7 @@ Expected: PASS
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/main.py tests/unit/test_startup_checks.py
+git add src/serp_llm/main.py tests/unit/test_startup_checks.py
 git commit -m "feat: add startup credential check warning for known-default secrets"
 ```
 
@@ -298,7 +298,7 @@ Insert after the existing sections in `.env.example`:
 # SMTP_HOST=smtp.example.com
 # SMTP_USER=alerts@example.com
 # SMTP_PASS=
-# SMTP_FROM=webgateway@example.com
+# SMTP_FROM=serp_llm@example.com
 # SMTP_TO=admin@example.com
 
 

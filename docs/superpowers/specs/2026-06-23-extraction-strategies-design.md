@@ -90,8 +90,8 @@ If `extract_strategy` is not set in the policy, the pipeline behaves exactly as 
 
 ### Phase 1 (1 session): Strategy selector + json_ld
 
-- `src/webgateway/postprocessing/strategies/__init__.py` — Strategy registry and selector
-- `src/webgateway/postprocessing/strategies/json_ld.py` — JSON-LD extractor
+- `src/serp_llm/postprocessing/strategies/__init__.py` — Strategy registry and selector
+- `src/serp_llm/postprocessing/strategies/json_ld.py` — JSON-LD extractor
 - Add `extract_strategy` to policy engine config model
 - Wire strategy selector into `service.py` post-processing pipeline
 - Unit tests for json_ld strategy
@@ -99,7 +99,7 @@ If `extract_strategy` is not set in the policy, the pipeline behaves exactly as 
 
 ### Phase 2 (1 session): meta_extract + policy refinement
 
-- `src/webgateway/postprocessing/strategies/meta_extract.py`
+- `src/serp_llm/postprocessing/strategies/meta_extract.py`
 - Integration test with real amazon.com page (via CDP Chrome)
 - Add more domain policy rules (wikipedia, imdb, etc.)
 - Unit tests for meta_extract
@@ -110,12 +110,12 @@ If `extract_strategy` is not set in the policy, the pipeline behaves exactly as 
 
 | File | Action |
 |---|---|
-| `src/webgateway/postprocessing/strategies/__init__.py` | **Create** — registry + selector |
-| `src/webgateway/postprocessing/strategies/json_ld.py` | **Create** — JSON-LD extractor |
-| `src/webgateway/postprocessing/strategies/meta_extract.py` | **Create** — meta tag extractor |
-| `src/webgateway/postprocessing/service.py` | **Modify** — wire strategy selector into pipeline |
-| `src/webgateway/config.py` | **Modify** — extract_strategy in policy config model |
-| `src/webgateway/schemas.py` | **Modify** — add `structured_data` field to ExtractResponse |
+| `src/serp_llm/postprocessing/strategies/__init__.py` | **Create** — registry + selector |
+| `src/serp_llm/postprocessing/strategies/json_ld.py` | **Create** — JSON-LD extractor |
+| `src/serp_llm/postprocessing/strategies/meta_extract.py` | **Create** — meta tag extractor |
+| `src/serp_llm/postprocessing/service.py` | **Modify** — wire strategy selector into pipeline |
+| `src/serp_llm/config.py` | **Modify** — extract_strategy in policy config model |
+| `src/serp_llm/schemas.py` | **Modify** — add `structured_data` field to ExtractResponse |
 | `config.yaml` | **Modify** — add per-domain policy rules |
 | `config.local.yaml` | **Modify** — add per-domain policy rules |
 | `tests/unit/test_strategies.py` | **Create** — unit tests |

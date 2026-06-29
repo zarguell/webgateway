@@ -13,23 +13,23 @@
 ### Task 1: URL validator module
 
 **Files:**
-- Create: `src/webgateway/security/__init__.py`
-- Create: `src/webgateway/security/url_validator.py`
+- Create: `src/serp_llm/security/__init__.py`
+- Create: `src/serp_llm/security/url_validator.py`
 - Test: `tests/unit/test_url_validator.py`
 
 - [ ] **Step 1: Create security package**
 
 ```bash
-mkdir -p src/webgateway/security
+mkdir -p src/serp_llm/security
 ```
 
-Create `src/webgateway/security/__init__.py`:
+Create `src/serp_llm/security/__init__.py`:
 
 ```python
 """Security utilities: URL validation, SSRF protection, input sanitization."""
 ```
 
-Create `src/webgateway/security/url_validator.py`:
+Create `src/serp_llm/security/url_validator.py`:
 
 ```python
 """SSRF protection via URL validation and private-IP blocklisting.
@@ -179,7 +179,7 @@ Create `tests/unit/test_url_validator.py`:
 
 import pytest
 
-from webgateway.security.url_validator import (
+from serp_llm.security.url_validator import (
     UrlValidationError,
     is_safe_url,
     validate_url,
@@ -277,7 +277,7 @@ Expected: PASS (note: `searxng:8080` resolution test will likely fail in unit te
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/security/ tests/unit/test_url_validator.py
+git add src/serp_llm/security/ tests/unit/test_url_validator.py
 git commit -m "feat(security): SSRF URL validator with private IP blocklist"
 ```
 
@@ -286,11 +286,11 @@ git commit -m "feat(security): SSRF URL validator with private IP blocklist"
 ### Task 2: Add HttpUrl validation to ExtractRequest
 
 **Files:**
-- Modify: `src/webgateway/schemas.py`
+- Modify: `src/serp_llm/schemas.py`
 
 - [ ] **Step 1: Update ExtractRequest.url to use HttpUrl**
 
-In `src/webgateway/schemas.py`, add the import at the top (replacing the existing `from pydantic import BaseModel, Field`):
+In `src/serp_llm/schemas.py`, add the import at the top (replacing the existing `from pydantic import BaseModel, Field`):
 
 ```python
 from pydantic import BaseModel, Field, HttpUrl
@@ -344,7 +344,7 @@ Caught: 1 validation error for HttpUrl
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/schemas.py
+git add src/serp_llm/schemas.py
 git commit -m "feat(schemas): use HttpUrl type for ExtractRequest.url"
 ```
 
@@ -353,11 +353,11 @@ git commit -m "feat(schemas): use HttpUrl type for ExtractRequest.url"
 ### Task 3: Wire URL validation into the service layer
 
 **Files:**
-- Modify: `src/webgateway/service.py` (add URL validation before provider dispatch)
+- Modify: `src/serp_llm/service.py` (add URL validation before provider dispatch)
 
 - [ ] **Step 1: Add URL validation call in service.extract()**
 
-In `src/webgateway/service.py`, find the `extract` method. It starts around line 529. Insert a URL validation call at the beginning of the method, before any provider dispatch:
+In `src/serp_llm/service.py`, find the `extract` method. It starts around line 529. Insert a URL validation call at the beginning of the method, before any provider dispatch:
 
 ```python
     async def extract(
@@ -368,7 +368,7 @@ In `src/webgateway/service.py`, find the `extract` method. It starts around line
     ) -> ExtractResponse | DryRunResponse:
         """Extract content from a URL."""
         # --- SSRF check: validate the URL before any provider dispatch ---
-        from webgateway.security.url_validator import validate_url
+        from serp_llm.security.url_validator import validate_url
 
         try:
             validate_url(str(body.url))
@@ -388,7 +388,7 @@ Note: `body.url` will be a `pydantic.HttpUrl` object after the schema change, so
 Add `ProviderError` to the import if it's already imported (it is — line 39-42):
 
 ```python
-from webgateway.providers.base import (
+from serp_llm.providers.base import (
     ExtractOptions,
     ProviderError,
     SearchOptions,
@@ -402,7 +402,7 @@ Add to `tests/unit/test_url_validator.py`:
 ```python
 def test_gateway_rejects_private_url():
     """Simulate what the service layer does: validate_url on extract."""
-    from webgateway.security.url_validator import validate_url
+    from serp_llm.security.url_validator import validate_url
 
     with pytest.raises(UrlValidationError, match="blocked|private/reserved"):
         validate_url("http://192.168.1.1/config")
@@ -419,7 +419,7 @@ Expected: all pass (or only pre-existing failures)
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/service.py tests/unit/test_url_validator.py
+git add src/serp_llm/service.py tests/unit/test_url_validator.py
 git commit -m "feat(service): wire SSRF URL validation before extract dispatch"
 ```
 

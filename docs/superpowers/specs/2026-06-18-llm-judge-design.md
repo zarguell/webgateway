@@ -49,7 +49,7 @@ Request
 
 ### 3.1 Refactor `LLMJudgeConfig` (breaking change — no existing production configs)
 
-**File:** `src/webgateway/config.py`, lines 111–118
+**File:** `src/serp_llm/config.py`, lines 111–118
 
 **Before (Ollama-specific):**
 ```python
@@ -124,7 +124,7 @@ llm_judge:
 
 ---
 
-## 4. Judge Module: `src/webgateway/judge.py`
+## 4. Judge Module: `src/serp_llm/judge.py`
 
 Single-file module. Four components:
 
@@ -597,15 +597,15 @@ Manual integration test against local LM Studio is possible but not automated:
 
 | File | Change |
 |---|---|
-| `src/webgateway/judge.py` | **New.** `DecisionCache`, `JudgeContext`, `FailedProvider`, `ProviderInfo`, `JudgeResponse`, `LLMJudge` |
-| `src/webgateway/config.py` | Refactor `LLMJudgeConfig` (lines 111–118): remove `ollama_url`, `triggers`; add `base_url`, `api_key`, `trigger_on_policy_miss`, `trigger_on_retry`, `trigger_on_error_class`, `timeout`, `temperature` |
-| `src/webgateway/service.py` | Add `llm_judge` param to constructor; add judge calls in `search()`, `extract()`, `_execute_with_fallback()`; add `RequestContext` dataclass |
-| `src/webgateway/main.py` | Construct `LLMJudge` when enabled, inject into `GatewayService` |
+| `src/serp_llm/judge.py` | **New.** `DecisionCache`, `JudgeContext`, `FailedProvider`, `ProviderInfo`, `JudgeResponse`, `LLMJudge` |
+| `src/serp_llm/config.py` | Refactor `LLMJudgeConfig` (lines 111–118): remove `ollama_url`, `triggers`; add `base_url`, `api_key`, `trigger_on_policy_miss`, `trigger_on_retry`, `trigger_on_error_class`, `timeout`, `temperature` |
+| `src/serp_llm/service.py` | Add `llm_judge` param to constructor; add judge calls in `search()`, `extract()`, `_execute_with_fallback()`; add `RequestContext` dataclass |
+| `src/serp_llm/main.py` | Construct `LLMJudge` when enabled, inject into `GatewayService` |
 | `config.test.yaml` | Add `llm_judge: { enabled: false }` |
 | `tests/unit/test_judge.py` | **New.** All unit tests from §9.1 |
-| `src/webgateway/policy/models.py` | **No change.** `judge_invoked` and `judge_reasoning_tag` already exist |
-| `src/webgateway/audit.py` | **No change.** Audit fields already exist |
-| `src/webgateway/schemas.py` | **No change.** `PolicyDecision` already has judge fields |
+| `src/serp_llm/policy/models.py` | **No change.** `judge_invoked` and `judge_reasoning_tag` already exist |
+| `src/serp_llm/audit.py` | **No change.** Audit fields already exist |
+| `src/serp_llm/schemas.py` | **No change.** `PolicyDecision` already has judge fields |
 
 ---
 

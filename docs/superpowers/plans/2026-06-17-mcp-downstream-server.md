@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Expose `web_search` and `web_extract` as MCP tools (Streamable HTTP transport) so AI agents can call WebGateway via MCP instead of (or alongside) REST.
+**Goal:** Expose `web_search` and `web_extract` as MCP tools (Streamable HTTP transport) so AI agents can call serpLLM via MCP instead of (or alongside) REST.
 
 **Architecture:** Mount a `FastMCP` Streamable HTTP ASGI sub-app inside the existing FastAPI process at `/mcp`. Both REST and MCP share the same `GatewayService` singleton — the MCP tools are thin wrappers that build `SearchRequest`/`ExtractRequest` from tool arguments and call `gateway_service.search()`/`gateway_service.extract()`. Auth reuses the existing Bearer token scheme via a Starlette middleware that validates tokens against `ConfigManager.find_auth_key()`.
 
@@ -29,7 +29,7 @@
 from mcp.server.fastmcp import FastMCP
 
 # Constructor accepts: name, json_response, stateless_http, streamable_http_path, ...
-mcp = FastMCP("WebGateway", json_response=True, stateless_http=True, streamable_http_path="/")
+mcp = FastMCP("serpLLM", json_response=True, stateless_http=True, streamable_http_path="/")
 
 # Tool registration (decorator MUST be called with parens)
 @mcp.tool()
@@ -51,10 +51,10 @@ async with mcp.session_manager.run():
 
 | File | Responsibility | Action |
 |------|---------------|--------|
-| `src/webgateway/config.py` | Add `MCPConfig` model + `GatewayConfig.mcp` field | Modify |
-| `src/webgateway/mcp/__init__.py` | Package init, exports | Create |
-| `src/webgateway/mcp/server.py` | Tool execution functions, auth middleware, server factory | Create |
-| `src/webgateway/main.py` | Conditionally mount MCP app in lifespan | Modify |
+| `src/serp_llm/config.py` | Add `MCPConfig` model + `GatewayConfig.mcp` field | Modify |
+| `src/serp_llm/mcp/__init__.py` | Package init, exports | Create |
+| `src/serp_llm/mcp/server.py` | Tool execution functions, auth middleware, server factory | Create |
+| `src/serp_llm/main.py` | Conditionally mount MCP app in lifespan | Modify |
 | `config.yaml` | Add MCP config block | Modify |
 | `config.test.yaml` | Add MCP config block (enabled) | Modify |
 | `Dockerfile` | Install `[mcp]` extra | Modify |
@@ -66,7 +66,7 @@ async with mcp.session_manager.run():
 ## Task 1: MCPConfig Model
 
 **Files:**
-- Modify: `src/webgateway/config.py` (add `MCPConfig` class ~line 219, add field to `GatewayConfig` ~line 209)
+- Modify: `src/serp_llm/config.py` (add `MCPConfig` class ~line 219, add field to `GatewayConfig` ~line 209)
 - Test: `tests/unit/test_mcp_server.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -78,7 +78,7 @@ Create `tests/unit/test_mcp_server.py`:
 
 from __future__ import annotations
 
-from webgateway.config import GatewayConfig, MCPConfig
+from serp_llm.config import GatewayConfig, MCPConfig
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ Expected: FAIL with `ImportError: cannot import name 'MCPConfig'`
 
 - [ ] **Step 3: Implement MCPConfig**
 
-Add to `src/webgateway/config.py` — insert the `MCPConfig` class **before** the `GatewayConfig` class (around line 208, after `CacheConfig`):
+Add to `src/serp_llm/config.py` — insert the `MCPConfig` class **before** the `GatewayConfig` class (around line 208, after `CacheConfig`):
 
 ```python
 class MCPConfig(BaseModel):
@@ -155,14 +155,14 @@ Expected: PASS (4 tests)
 
 - [ ] **Step 5: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/config.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/config.py`
 
 Expected: No errors.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/webgateway/config.py tests/unit/test_mcp_server.py
+git add src/serp_llm/config.py tests/unit/test_mcp_server.py
 git commit -m "feat: add MCPConfig model for downstream MCP server settings"
 ```
 
@@ -173,13 +173,13 @@ git commit -m "feat: add MCPConfig model for downstream MCP server settings"
 These are standalone async functions that encapsulate the tool logic. They are independently testable with a mock `GatewayService` and later wrapped by thin closures in the MCP server factory.
 
 **Files:**
-- Create: `src/webgateway/mcp/__init__.py`
-- Create: `src/webgateway/mcp/server.py`
+- Create: `src/serp_llm/mcp/__init__.py`
+- Create: `src/serp_llm/mcp/server.py`
 - Test: `tests/unit/test_mcp_server.py` (append)
 
 - [ ] **Step 1: Create the package init**
 
-Create `src/webgateway/mcp/__init__.py`:
+Create `src/serp_llm/mcp/__init__.py`:
 
 ```python
 """Downstream MCP server package — exposes web_search and web_extract tools."""
@@ -195,11 +195,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from webgateway.config import AuthKey
-from webgateway.dlp import DlpBlockedError
-from webgateway.mcp.server import execute_web_search, execute_web_extract
-from webgateway.providers.base import ProviderError
-from webgateway.schemas import SearchResponse, ExtractResponse
+from serp_llm.config import AuthKey
+from serp_llm.dlp import DlpBlockedError
+from serp_llm.mcp.server import execute_web_search, execute_web_extract
+from serp_llm.providers.base import ProviderError
+from serp_llm.schemas import SearchResponse, ExtractResponse
 
 
 # ---------------------------------------------------------------------------
@@ -342,7 +342,7 @@ Expected: FAIL with `ImportError: cannot import name 'execute_web_search'`
 
 - [ ] **Step 4: Implement the tool execution functions**
 
-Create `src/webgateway/mcp/server.py`:
+Create `src/serp_llm/mcp/server.py`:
 
 ```python
 """Downstream MCP server — exposes web_search and web_extract as MCP tools.
@@ -362,13 +362,13 @@ from __future__ import annotations
 import contextvars
 import json
 
-from webgateway.dlp import DlpBlockedError
-from webgateway.providers.base import ProviderError
-from webgateway.schemas import (
+from serp_llm.dlp import DlpBlockedError
+from serp_llm.providers.base import ProviderError
+from serp_llm.schemas import (
     ExtractRequest,
     SearchRequest,
 )
-from webgateway.service import GatewayService
+from serp_llm.service import GatewayService
 
 __all__ = [
     "execute_web_extract",
@@ -476,14 +476,14 @@ Expected: PASS (6 tests)
 
 - [ ] **Step 6: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/mcp/`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/mcp/`
 
 Expected: No errors.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/webgateway/mcp/__init__.py src/webgateway/mcp/server.py tests/unit/test_mcp_server.py
+git add src/serp_llm/mcp/__init__.py src/serp_llm/mcp/server.py tests/unit/test_mcp_server.py
 git commit -m "feat: add MCP tool execution functions for web_search and web_extract"
 ```
 
@@ -494,7 +494,7 @@ git commit -m "feat: add MCP tool execution functions for web_search and web_ext
 Validates Bearer tokens on MCP requests using the same `ConfigManager.find_auth_key()` as the REST surface. Sets `mcp_api_key_id` contextvar for the audit trail.
 
 **Files:**
-- Modify: `src/webgateway/mcp/server.py` (add `McpAuthMiddleware` class)
+- Modify: `src/serp_llm/mcp/server.py` (add `McpAuthMiddleware` class)
 - Test: `tests/unit/test_mcp_server.py` (append)
 
 - [ ] **Step 1: Write the failing tests**
@@ -506,7 +506,7 @@ from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from starlette.testclient import TestClient
 
-from webgateway.mcp.server import McpAuthMiddleware
+from serp_llm.mcp.server import McpAuthMiddleware
 
 
 def _make_test_app(config_manager):
@@ -523,7 +523,7 @@ def _make_test_app(config_manager):
 
 def _make_config_manager_with_keys():
     """Build a real ConfigManager with test auth keys."""
-    from webgateway.config import ConfigManager
+    from serp_llm.config import ConfigManager
     import tempfile, yaml, os
     
     config_data = {
@@ -584,7 +584,7 @@ class TestMcpAuthMiddleware:
         from starlette.routing import Route
 
         async def capture_handler(request):
-            from webgateway.mcp.server import mcp_api_key_id
+            from serp_llm.mcp.server import mcp_api_key_id
             captured["key_id"] = mcp_api_key_id.get()
             return JSONResponse({"ok": True})
 
@@ -604,7 +604,7 @@ Expected: FAIL with `ImportError: cannot import name 'McpAuthMiddleware'`
 
 - [ ] **Step 3: Implement McpAuthMiddleware**
 
-Add to `src/webgateway/mcp/server.py` — update the imports at the top and add the class. The full file after this step:
+Add to `src/serp_llm/mcp/server.py` — update the imports at the top and add the class. The full file after this step:
 
 **Imports** — add after existing imports:
 
@@ -613,7 +613,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from webgateway.config import ConfigManager
+from serp_llm.config import ConfigManager
 ```
 
 **Add `McpAuthMiddleware` to `__all__`**:
@@ -676,14 +676,14 @@ Expected: PASS (5 tests)
 
 - [ ] **Step 5: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/mcp/server.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/mcp/server.py`
 
 Expected: No errors.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/webgateway/mcp/server.py tests/unit/test_mcp_server.py
+git add src/serp_llm/mcp/server.py tests/unit/test_mcp_server.py
 git commit -m "feat: add McpAuthMiddleware for Bearer token validation on MCP surface"
 ```
 
@@ -694,7 +694,7 @@ git commit -m "feat: add McpAuthMiddleware for Bearer token validation on MCP su
 Builds a `FastMCP` instance, registers `web_search` and `web_extract` tools as thin closures over the execution functions, and configures transport settings.
 
 **Files:**
-- Modify: `src/webgateway/mcp/server.py` (add `create_mcp_server`)
+- Modify: `src/serp_llm/mcp/server.py` (add `create_mcp_server`)
 - Test: `tests/unit/test_mcp_server.py` (append)
 
 - [ ] **Step 0: Install the MCP dependency**
@@ -756,7 +756,7 @@ Expected: FAIL with `ImportError: cannot import name 'create_mcp_server'`
 
 - [ ] **Step 3: Implement create_mcp_server**
 
-Add to `src/webgateway/mcp/server.py`. Add to `__all__`:
+Add to `src/serp_llm/mcp/server.py`. Add to `__all__`:
 
 ```python
 __all__ = [
@@ -794,7 +794,7 @@ def create_mcp_server(gateway_service: GatewayService) -> FastMCP:
         A configured :class:`FastMCP` instance.
     """
     mcp = FastMCP(
-        "WebGateway",
+        "serpLLM",
         json_response=True,
         stateless_http=True,
         streamable_http_path="/",
@@ -862,14 +862,14 @@ Expected: ALL PASS (19 tests total across all classes)
 
 - [ ] **Step 6: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/mcp/`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/mcp/`
 
 Expected: No errors.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/webgateway/mcp/server.py tests/unit/test_mcp_server.py
+git add src/serp_llm/mcp/server.py tests/unit/test_mcp_server.py
 git commit -m "feat: add create_mcp_server factory with web_search and web_extract tools"
 ```
 
@@ -880,7 +880,7 @@ git commit -m "feat: add create_mcp_server factory with web_search and web_extra
 Conditionally mount the MCP ASGI sub-app when `config.mcp.enabled` is `True`. The session manager is started explicitly in the lifespan (Starlette does not propagate lifespan to mounted sub-apps).
 
 **Files:**
-- Modify: `src/webgateway/main.py`
+- Modify: `src/serp_llm/main.py`
 
 - [ ] **Step 1: Write a smoke test**
 
@@ -890,7 +890,7 @@ Append to `tests/unit/test_mcp_server.py`:
 class TestMainAppMcpMount:
     def test_mcp_disabled_by_default(self):
         """When mcp.enabled is False, no MCP mount exists."""
-        from webgateway.main import create_app
+        from serp_llm.main import create_app
 
         app = create_app()
         # The lifespan hasn't run, but we can check routes
@@ -910,10 +910,10 @@ Expected: PASS (MCP not yet wired, so no mount exists)
 
 - [ ] **Step 3: Implement the lifespan changes**
 
-Modify `src/webgateway/main.py`. Add imports at the top (after existing imports, before the lifespan function):
+Modify `src/serp_llm/main.py`. Add imports at the top (after existing imports, before the lifespan function):
 
 ```python
-from webgateway.mcp.server import McpAuthMiddleware, create_mcp_server
+from serp_llm.mcp.server import McpAuthMiddleware, create_mcp_server
 ```
 
 Modify the `lifespan` function. Replace the `yield` at the end with conditional MCP mounting. The new end of the lifespan function (after `app.state.gateway_service = gateway_service`):
@@ -1009,7 +1009,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 - [ ] **Step 4: Verify lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/main.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/main.py`
 
 Expected: No errors.
 
@@ -1022,7 +1022,7 @@ Expected: ALL PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/webgateway/main.py tests/unit/test_mcp_server.py
+git add src/serp_llm/main.py tests/unit/test_mcp_server.py
 git commit -m "feat: wire MCP server into FastAPI lifespan with conditional mount"
 ```
 

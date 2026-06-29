@@ -1,11 +1,11 @@
-# Rebrand: webgateway → serp_llm
+# Rebrand: serp_llm → serp_llm
 
 **Date:** 2026-06-29
 **Status:** Draft
 
 ## Why
 
-The project has outgrown its generic "webgateway" name. "serp_llm" (Search Engine
+The project has outgrown its generic "serp_llm" name. "serp_llm" (Search Engine
 Results Page Orchestrator for LLMs) accurately describes what it does — it
 orchestrates SERP retrieval and content extraction for AI agents.
 
@@ -27,7 +27,7 @@ right moment for a clean break.
 ## Scope
 
 This is a pure rebrand — no code behavior changes, no refactoring, no feature
-work. Every file that references "webgateway" / "WebGateway" is in scope.
+work. Every file that references "serp_llm" / "serpLLM" is in scope.
 
 **Total: ~130 files across 7 categories.**
 
@@ -36,19 +36,19 @@ work. Every file that references "webgateway" / "WebGateway" is in scope.
 ### 1. Python package — ~90 files (60% of effort)
 
 ```
-src/webgateway/                          → src/serp_llm/  (git mv)
+src/serp_llm/                          → src/serp_llm/  (git mv)
 pyproject.toml: name                     → "serp-llm"
 pyproject.toml: packages                 → ["src/serp_llm"]
 pyproject.toml: known-first-party        → ["serp_llm"]
 Dockerfile CMD                           → uvicorn serp_llm.main:app
 Dockerfile user/group                    → serpllm
 All import statements                    → from serp_llm.xxx import YYY
-All @patch("webgateway.xxx.yyy")        → @patch("serp_llm.xxx.yyy")
+All @patch("serp_llm.xxx.yyy")        → @patch("serp_llm.xxx.yyy")
 tests/__init__.py docstring             → "serpLLM"
 ```
 
-Every Python file under `src/` and `tests/` imports from `webgateway.*`. Every
-module docstring mentions "WebGateway". Both get bulk-replaced.
+Every Python file under `src/` and `tests/` imports from `serp_llm.*`. Every
+module docstring mentions "serpLLM". Both get bulk-replaced.
 
 ### 2. Docker / CI — 6 files, ~55 references
 
@@ -61,9 +61,9 @@ module docstring mentions "WebGateway". Both get bulk-replaced.
 | `docker-compose.selfhosted.yml` | 6× container names, 8× network refs, 4× Traefik labels, image tag |
 | `docker-compose.invisible-playwright.yml` | image tag |
 
-The Docker network `webgateway-net` is renamed to `serpllm-net` everywhere.
-Docker volumes `webgateway-data` and `webgateway-logs` → `serpllm-data`,
-`serpllm-logs`. Container names `webgateway-*` → `serpllm-*`.
+The Docker network `serpllm-net` is renamed to `serpllm-net` everywhere.
+Docker volumes `serpllm-data` and `serpllm-logs` → `serpllm-data`,
+`serpllm-logs`. Container names `serpllm-*` → `serpllm-*`.
 
 The CI workflow at `.github/workflows/docker-publish.yml` uses
 `${{ github.repository }}` which will auto-resolve to `zarguell/serp_llm` once
@@ -73,21 +73,21 @@ the repo is renamed. No workflow changes needed.
 
 | Action | Details |
 |---|---|
-| Rename repo on GitHub | `zarguell/webgateway` → `zarguell/serp_llm` |
+| Rename repo on GitHub | `zarguell/serp_llm` → `zarguell/serp_llm` |
 | Update mkdocs.yml | `site_url`, `repo_url` |
 | Update README.md | clone URL |
 | Update self-hosted.md | clone URL |
 | Update installation.md | clone URL |
 
 GHCR images auto-follow the repo name. Old images at
-`ghcr.io/zarguell/webgateway:*` are orphaned — delete from Package settings.
+`ghcr.io/zarguell/serp_llm:*` are orphaned — delete from Package settings.
 
 ### 4. Documentation — ~15 files
 
 | File | Changes |
 |---|---|
 | `README.md` | title, description, clone URL, badge URLs — full rewrite |
-| `AGENTS.md` | heading, 8× `src/webgateway/` paths, compose commands |
+| `AGENTS.md` | heading, 8× `src/serp_llm/` paths, compose commands |
 | `docs-src/mkdocs.yml` | `site_name`, `site_url`, `repo_url` |
 | `docs-src/docs/index.md` | heading |
 | `docs-src/docs/**/*.md` (~9 pages) | project name, paths, code examples |
@@ -95,8 +95,8 @@ GHCR images auto-follow the repo name. Old images at
 
 ### 5. Admin UI templates — 9 files
 
-Each HTML template has a `<title>` tag containing "WebGateway Admin" and the
-sidebar in `base.html` has an `<h1>WebGateway</h1>`. These are single-line
+Each HTML template has a `<title>` tag containing "serpLLM Admin" and the
+sidebar in `base.html` has an `<h1>serpLLM</h1>`. These are single-line
 string replacements.
 
 ### 6. Application-internal branding — 6 references
@@ -113,12 +113,12 @@ injection/classifier.py:         pip install hint → "serp-llm[injection]"
 ### 7. Shell scripts — 1 file
 
 `scripts/ensure-gateway.sh`: 7× echo statements, 1× `docker compose logs`
-reference. All "WebGateway" text → "serpLLM".
+reference. All "serpLLM" text → "serpLLM".
 
 ### 8. Historical plans — ~20 files (optional)
 
 `docs/superpowers/plans/` and `docs/superpowers/specs/` contain internal design
-documents that reference "webgateway". These are audit trail — they can be
+documents that reference "serp_llm". These are audit trail — they can be
 bulk-replaced or left as-is. No functional impact either way.
 
 ## Execution Strategy
@@ -128,10 +128,10 @@ bulk-replaced or left as-is. No functional impact either way.
 ```
 Branch: rebrand/serpllm
 
-Step 1: git mv src/webgateway/ src/serp_llm/
-Step 2: Bulk sed: webgateway → serp_llm (Python imports, test patches)
-Step 3: Bulk sed: WebGateway → serpLLM (display names, titles)
-Step 4: Bulk sed: webgateway- → serpllm- (Docker resources)
+Step 1: git mv src/serp_llm/ src/serp_llm/
+Step 2: Bulk sed: serp_llm → serp_llm (Python imports, test patches)
+Step 3: Bulk sed: serpLLM → serpLLM (display names, titles)
+Step 4: Bulk sed: serpllm- → serpllm- (Docker resources)
 Step 5: Update pyproject.toml (name, packages, known-first-party)
 Step 6: Update Dockerfile (user/group, chowns, CMD)
 Step 7: Update all docker-compose*.yml files
@@ -142,12 +142,12 @@ Step 11: Update app-internal branding (main.py, config.py, mcp/server.py, etc.)
 Step 12: ruff check --fix src/ tests/
 Step 13: Run unit tests to verify nothing is broken
 Step 14: Commit, push branch
-Step 15: Rename GitHub repo: webgateway → serp_llm
+Step 15: Rename GitHub repo: serp_llm → serp_llm
 Step 16: Push tags to trigger GHCR rebuild
 Step 17: Verify: clone fresh, docker compose up, run a search
 ```
 
-The branch has one commit titled `rebrand: webgateway → serp_llm (#N)`.
+The branch has one commit titled `rebrand: serp_llm → serp_llm (#N)`.
 
 ## Risk & Mitigation
 
@@ -156,7 +156,7 @@ The branch has one commit titled `rebrand: webgateway → serp_llm (#N)`.
 | Missed import path | Medium | `ruff check` catches unresolved imports. Unit tests surface the rest. |
 | Docker network name mismatch between compose files | Low | All 5 compose files updated in same commit. `docker compose up` fails fast. |
 | GHCR orphan images | Certain | Delete old packages from GitHub UI post-rename. |
-| Old Docker volumes with `webgateway` ownership | Medium | Fresh deploy on new machine — no old volumes exist. Local dev may need `docker volume rm`. |
+| Old Docker volumes with `serp_llm` ownership | Medium | Fresh deploy on new machine — no old volumes exist. Local dev may need `docker volume rm`. |
 | `docs/superpowers/` drift | Low | Acceptable. These are historical artifacts. |
 
 ## Verification

@@ -15,11 +15,11 @@
 ### Task 1: Add config model for extraction strategies
 
 **Files:**
-- Modify: `src/webgateway/config.py` — add `ExtractStrategyConfig` and wire into `PolicyRule`
+- Modify: `src/serp_llm/config.py` — add `ExtractStrategyConfig` and wire into `PolicyRule`
 
 - [ ] **Step 1: Add ExtractStrategyConfig model**
 
-Add to `src/webgateway/config.py`, after the `PolicyRule` class (around line 89):
+Add to `src/serp_llm/config.py`, after the `PolicyRule` class (around line 89):
 
 ```python
 class ExtractStrategyConfig(BaseModel):
@@ -38,7 +38,7 @@ Add to `PolicyRule` class (line 88, after `allowed_providers`):
 - [ ] **Step 3: Run lint to verify**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/config.py
+source .venv/bin/activate && ruff check src/serp_llm/config.py
 ```
 
 Expected: clean
@@ -46,7 +46,7 @@ Expected: clean
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/config.py
+git add src/serp_llm/config.py
 git commit -m "feat(config): add ExtractStrategyConfig model to PolicyRule"
 ```
 
@@ -55,11 +55,11 @@ git commit -m "feat(config): add ExtractStrategyConfig model to PolicyRule"
 ### Task 2: Create strategy registry and selector
 
 **Files:**
-- Create: `src/webgateway/postprocessing/strategies/__init__.py`
+- Create: `src/serp_llm/postprocessing/strategies/__init__.py`
 
 - [ ] **Step 1: Write the strategy interface and selector**
 
-Create `src/webgateway/postprocessing/strategies/__init__.py`:
+Create `src/serp_llm/postprocessing/strategies/__init__.py`:
 
 ```python
 """Extraction strategy registry and selector.
@@ -75,7 +75,7 @@ import logging
 from dataclasses import dataclass
 from typing import Protocol
 
-from webgateway.config import ConfigManager
+from serp_llm.config import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ class StrategySelector:
 - [ ] **Step 2: Run lint**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/postprocessing/strategies/__init__.py
+source .venv/bin/activate && ruff check src/serp_llm/postprocessing/strategies/__init__.py
 ```
 
 Expected: clean
@@ -172,7 +172,7 @@ Expected: clean
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/postprocessing/strategies/__init__.py
+git add src/serp_llm/postprocessing/strategies/__init__.py
 git commit -m "feat(pipeline): add extraction strategy registry and selector"
 ```
 
@@ -181,11 +181,11 @@ git commit -m "feat(pipeline): add extraction strategy registry and selector"
 ### Task 3: Implement json_ld extraction strategy
 
 **Files:**
-- Create: `src/webgateway/postprocessing/strategies/json_ld.py`
+- Create: `src/serp_llm/postprocessing/strategies/json_ld.py`
 
 - [ ] **Step 1: Write the json_ld strategy**
 
-Create `src/webgateway/postprocessing/strategies/json_ld.py`:
+Create `src/serp_llm/postprocessing/strategies/json_ld.py`:
 
 ```python
 """JSON-LD extraction strategy.
@@ -201,7 +201,7 @@ import logging
 import re
 from dataclasses import dataclass
 
-from webgateway.postprocessing.strategies import ExtractionStrategy, StrategyResult
+from serp_llm.postprocessing.strategies import ExtractionStrategy, StrategyResult
 
 logger = logging.getLogger(__name__)
 
@@ -368,7 +368,7 @@ class JsonLdStrategy:
 - [ ] **Step 2: Run lint**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/postprocessing/strategies/json_ld.py
+source .venv/bin/activate && ruff check src/serp_llm/postprocessing/strategies/json_ld.py
 ```
 
 Expected: clean
@@ -376,7 +376,7 @@ Expected: clean
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/webgateway/postprocessing/strategies/json_ld.py
+git add src/serp_llm/postprocessing/strategies/json_ld.py
 git commit -m "feat(pipeline): add json_ld extraction strategy"
 ```
 
@@ -385,12 +385,12 @@ git commit -m "feat(pipeline): add json_ld extraction strategy"
 ### Task 4: Wire strategy selector into post-processing pipeline
 
 **Files:**
-- Modify: `src/webgateway/post_processing/pipeline.py` — add strategy selector call before stage 1
-- Modify: `src/webgateway/service.py` — pass policy_matched to pipeline, surface structured_data
+- Modify: `src/serp_llm/post_processing/pipeline.py` — add strategy selector call before stage 1
+- Modify: `src/serp_llm/service.py` — pass policy_matched to pipeline, surface structured_data
 
 - [ ] **Step 1: Modify PostProcessingResult to carry structured_data**
 
-Add to `src/webgateway/post_processing/pipeline.py` in `PostProcessingResult` (after `injection`):
+Add to `src/serp_llm/post_processing/pipeline.py` in `PostProcessingResult` (after `injection`):
 
 ```python
     structured_data: dict | list | None = None
@@ -401,7 +401,7 @@ Add to `src/webgateway/post_processing/pipeline.py` in `PostProcessingResult` (a
 After the existing imports in `pipeline.py`, add:
 
 ```python
-from webgateway.postprocessing.strategies import StrategySelector
+from serp_llm.postprocessing.strategies import StrategySelector
 ```
 
 In `__init__`, add parameter and field:
@@ -480,7 +480,7 @@ Also update the final return to include structured_data:
 
 - [ ] **Step 4: Pass policy_matched from service.py**
 
-In `src/webgateway/service.py`, find the `pp_result = await self._post_processing.run(...)` call (line 661) and add `policy_matched=decision.policy_matched`:
+In `src/serp_llm/service.py`, find the `pp_result = await self._post_processing.run(...)` call (line 661) and add `policy_matched=decision.policy_matched`:
 
 ```python
             pp_result = await self._post_processing.run(
@@ -523,8 +523,8 @@ Only include `structured_data` when the request asked for JSON format.
 Find where `PostProcessingPipeline` is constructed in `main.py` or `service.py`, and pass the strategy selector:
 
 ```python
-from webgateway.postprocessing.strategies import StrategySelector
-from webgateway.postprocessing.strategies.json_ld import JsonLdStrategy
+from serp_llm.postprocessing.strategies import StrategySelector
+from serp_llm.postprocessing.strategies.json_ld import JsonLdStrategy
 
 # In the initialization:
 strategy_selector = StrategySelector(config_manager)
@@ -541,7 +541,7 @@ self._post_processing = PostProcessingPipeline(
 - [ ] **Step 7: Run lint**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/post_processing/pipeline.py src/webgateway/service.py src/webgateway/schemas.py
+source .venv/bin/activate && ruff check src/serp_llm/post_processing/pipeline.py src/serp_llm/service.py src/serp_llm/schemas.py
 ```
 
 Expected: clean
@@ -549,7 +549,7 @@ Expected: clean
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/webgateway/post_processing/pipeline.py src/webgateway/service.py src/webgateway/schemas.py
+git add src/serp_llm/post_processing/pipeline.py src/serp_llm/service.py src/serp_llm/schemas.py
 git commit -m "feat(pipeline): wire strategy selector into post-processing pipeline"
 ```
 
@@ -558,11 +558,11 @@ git commit -m "feat(pipeline): wire strategy selector into post-processing pipel
 ### Task 5: Add structured_data field to ExtractResponse schema
 
 **Files:**
-- Modify: `src/webgateway/schemas.py` — add `structured_data` field
+- Modify: `src/serp_llm/schemas.py` — add `structured_data` field
 
 - [ ] **Step 1: Add field to ExtractResponse**
 
-In `src/webgateway/schemas.py`, add to `ExtractResponse` (after `prompt_injection`):
+In `src/serp_llm/schemas.py`, add to `ExtractResponse` (after `prompt_injection`):
 
 ```python
     structured_data: dict | list | None = None
@@ -571,7 +571,7 @@ In `src/webgateway/schemas.py`, add to `ExtractResponse` (after `prompt_injectio
 - [ ] **Step 2: Verify**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/schemas.py
+source .venv/bin/activate && ruff check src/serp_llm/schemas.py
 ```
 
 Expected: clean
@@ -594,7 +594,7 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.postprocessing.strategies.json_ld import JsonLdStrategy
+from serp_llm.postprocessing.strategies.json_ld import JsonLdStrategy
 
 
 @pytest.fixture
@@ -793,7 +793,7 @@ git commit -m "feat(config): add amazon.com policy with json_ld extraction strat
 
 ### Task 8: Integration smoke test
 
-**Files:** None (test via WebGateway's own MCP)
+**Files:** None (test via serpLLM's own MCP)
 
 - [ ] **Step 1: Rebuild gateway and start local stack**
 

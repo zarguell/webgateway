@@ -13,11 +13,11 @@
 ### Task 1: Fix MCP auth to use multi-source key resolution
 
 **Files:**
-- Modify: `src/webgateway/mcp/server.py`
+- Modify: `src/serp_llm/mcp/server.py`
 
 - [ ] **Step 1: Refactor McpAuthMiddleware to use the auth module**
 
-In `src/webgateway/mcp/server.py`, the `McpAuthMiddleware` class currently calls `self._config_manager.find_auth_key(token)` (line 93), which only checks config-based keys.
+In `src/serp_llm/mcp/server.py`, the `McpAuthMiddleware` class currently calls `self._config_manager.find_auth_key(token)` (line 93), which only checks config-based keys.
 
 Replace the `__init__` and `dispatch` methods to use `_find_key` from `auth.py`:
 
@@ -55,7 +55,7 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
         token = parts[1].strip()
 
         # Use the same multi-source resolver as REST auth
-        from webgateway.auth import _find_key
+        from serp_llm.auth import _find_key
 
         # Create a minimal request-like object that _find_key can work with
         # by attaching the components it needs
@@ -82,7 +82,7 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
         if self._key_store is not None:
             stored = self._key_store.verify_key(token)
             if stored is not None:
-                from webgateway.config import AuthKey
+                from serp_llm.config import AuthKey
                 return AuthKey(
                     id=stored.id,
                     secret=token,
@@ -108,7 +108,7 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
             return None
         if self._key_store is not None and self._key_store.count_active_admin_keys() > 0:
             return None
-        from webgateway.config import AuthKey
+        from serp_llm.config import AuthKey
         return AuthKey(
             id="bootstrap",
             secret=bootstrap_secret,
@@ -120,10 +120,10 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
 Update the import section at the top of the file to include `KeyStore`:
 
 ```python
-from webgateway.config import ConfigManager
-from webgateway.dlp import DlpBlockedError
-from webgateway.key_store import KeyStore
-from webgateway.providers.base import ProviderError
+from serp_llm.config import ConfigManager
+from serp_llm.dlp import DlpBlockedError
+from serp_llm.key_store import KeyStore
+from serp_llm.providers.base import ProviderError
 ```
 
 Update `mount_mcp()` (line 235) to pass the key_store:
@@ -162,9 +162,9 @@ from unittest.mock import MagicMock
 import pytest
 from starlette.testclient import TestClient
 
-from webgateway.config import AuthKey, ConfigManager
-from webgateway.key_store import KeyStore
-from webgateway.mcp.server import McpAuthMiddleware
+from serp_llm.config import AuthKey, ConfigManager
+from serp_llm.key_store import KeyStore
+from serp_llm.mcp.server import McpAuthMiddleware
 
 
 def _make_app_with_middleware(
@@ -240,7 +240,7 @@ Expected: PASS
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/mcp/server.py tests/unit/test_mcp_auth.py
+git add src/serp_llm/mcp/server.py tests/unit/test_mcp_auth.py
 git commit -m "fix(mcp): multi-source auth key resolution for MCP middleware"
 ```
 
@@ -249,13 +249,13 @@ git commit -m "fix(mcp): multi-source auth key resolution for MCP middleware"
 ### Task 2: Add CSRF protection to admin UI
 
 **Files:**
-- Modify: `src/webgateway/admin_session.py` (add CSRF token support)
-- Modify: `src/webgateway/routes/admin_ui.py` (add CSRF validation)
-- Modify: `src/webgateway/templates/admin_base.html` (add CSRF token to forms)
+- Modify: `src/serp_llm/admin_session.py` (add CSRF token support)
+- Modify: `src/serp_llm/routes/admin_ui.py` (add CSRF validation)
+- Modify: `src/serp_llm/templates/admin_base.html` (add CSRF token to forms)
 
 - [ ] **Step 1: Add CSRF token generation to AdminSessionManager**
 
-In `src/webgateway/admin_session.py`, add CSRF token support:
+In `src/serp_llm/admin_session.py`, add CSRF token support:
 
 ```python
 import hashlib
@@ -324,7 +324,7 @@ It should already exist since `__init__` takes a `secret` parameter. Add the `_c
 
 - [ ] **Step 2: Add CSRF token to template context and add hidden field**
 
-In `src/webgateway/routes/admin_ui.py`, modify `_get_common_context` to generate a CSRF token:
+In `src/serp_llm/routes/admin_ui.py`, modify `_get_common_context` to generate a CSRF token:
 
 ```python
 def _get_common_context(request: Request) -> dict:
@@ -338,7 +338,7 @@ def _get_common_context(request: Request) -> dict:
     }
 ```
 
-In `src/webgateway/templates/admin_base.html`, add a hidden CSRF token field inside every `<form>` that performs a POST. Add after the opening `<form>` tag (or at the end, before `</form>`):
+In `src/serp_llm/templates/admin_base.html`, add a hidden CSRF token field inside every `<form>` that performs a POST. Add after the opening `<form>` tag (or at the end, before `</form>`):
 
 ```html
 <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
@@ -346,7 +346,7 @@ In `src/webgateway/templates/admin_base.html`, add a hidden CSRF token field ins
 
 - [ ] **Step 3: Validate CSRF token in state-changing POST handlers**
 
-In `src/webgateway/routes/admin_ui.py`, add a CSRF validation function:
+In `src/serp_llm/routes/admin_ui.py`, add a CSRF validation function:
 
 ```python
 def _verify_csrf(
@@ -396,7 +396,7 @@ source .venv/bin/activate && pytest tests/unit/ -x -q
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/admin_session.py src/webgateway/routes/admin_ui.py src/webgateway/templates/
+git add src/serp_llm/admin_session.py src/serp_llm/routes/admin_ui.py src/serp_llm/templates/
 git commit -m "fix(admin): add CSRF token validation to admin UI POST endpoints"
 ```
 
@@ -405,23 +405,23 @@ git commit -m "fix(admin): add CSRF token validation to admin UI POST endpoints"
 ### Task 3: Add security headers middleware
 
 **Files:**
-- Create: `src/webgateway/middleware/__init__.py`
-- Create: `src/webgateway/middleware/security_headers.py`
-- Modify: `src/webgateway/main.py` (wire middleware)
+- Create: `src/serp_llm/middleware/__init__.py`
+- Create: `src/serp_llm/middleware/security_headers.py`
+- Modify: `src/serp_llm/main.py` (wire middleware)
 
 - [ ] **Step 1: Create middleware package**
 
 ```bash
-mkdir -p src/webgateway/middleware
+mkdir -p src/serp_llm/middleware
 ```
 
-Create `src/webgateway/middleware/__init__.py`:
+Create `src/serp_llm/middleware/__init__.py`:
 
 ```python
 """Middleware: rate limiting, security headers, and other per-request processing."""
 ```
 
-Create `src/webgateway/middleware/security_headers.py`:
+Create `src/serp_llm/middleware/security_headers.py`:
 
 ```python
 """Middleware that sets security-related HTTP response headers.
@@ -503,7 +503,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from webgateway.middleware.security_headers import SecurityHeadersMiddleware
+from serp_llm.middleware.security_headers import SecurityHeadersMiddleware
 
 
 def _make_app() -> FastAPI:
@@ -570,10 +570,10 @@ class TestSecurityHeaders:
 
 - [ ] **Step 3: Wire security headers middleware in main.py**
 
-In `src/webgateway/main.py`, add the import:
+In `src/serp_llm/main.py`, add the import:
 
 ```python
-from webgateway.middleware.security_headers import SecurityHeadersMiddleware
+from serp_llm.middleware.security_headers import SecurityHeadersMiddleware
 ```
 
 Add after the route inclusions (around line 232, after all `app.include_router(...)` calls and before exception handlers):
@@ -594,6 +594,6 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/middleware/ tests/unit/test_security_headers.py src/webgateway/main.py
+git add src/serp_llm/middleware/ tests/unit/test_security_headers.py src/serp_llm/main.py
 git commit -m "feat(security): add security headers middleware (HSTS, CSP, XFO, etc.)"
 ```

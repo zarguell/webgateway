@@ -4,7 +4,7 @@
 
 **Goal:** Implement prompt injection detection (PRD Addendum v0.7 §27) as Stage 5 of the post-processing pipeline, shipping the v1 Standard tier: Rebuff heuristics + MiniLM ONNX classifier + optional LLM judge escalation, with block/alert/scrub actions, exemptions, per-request overrides, audit logging, and events.jsonl.
 
-**Architecture:** A new `src/webgateway/injection/` package mirrors the existing `dlp/` package pattern. The `InjectionDetector` orchestrates multiple detection layers (each independently enable/disable via config), produces an `InjectionDetectionResult` with scores and recommended action. The `PostProcessingPipeline` calls the detector as Stage 5 (between dedup and result construction). The `GatewayService` pre-checks exemptions and per-request overrides, then handles block (raise exception), alert (flag response), and audit/event logging. External dependencies (`rebuff`, `onnxruntime`) are optional imports with graceful degradation — if not installed, the layer is skipped silently.
+**Architecture:** A new `src/serp_llm/injection/` package mirrors the existing `dlp/` package pattern. The `InjectionDetector` orchestrates multiple detection layers (each independently enable/disable via config), produces an `InjectionDetectionResult` with scores and recommended action. The `PostProcessingPipeline` calls the detector as Stage 5 (between dedup and result construction). The `GatewayService` pre-checks exemptions and per-request overrides, then handles block (raise exception), alert (flag response), and audit/event logging. External dependencies (`rebuff`, `onnxruntime`) are optional imports with graceful degradation — if not installed, the layer is skipped silently.
 
 **Tech Stack:** Python 3.12 (Docker), `rebuff` (optional), `onnxruntime` + `transformers` (optional), `numpy` (optional), existing FastAPI/Pydantic/httpx stack.
 
@@ -13,14 +13,14 @@
 ## File Structure
 
 **New files:**
-- `src/webgateway/injection/__init__.py` — Public API exports
-- `src/webgateway/injection/types.py` — Result dataclasses, InjectionType enum, InjectionBlockedError
-- `src/webgateway/injection/heuristics.py` — Layer 1: Rebuff + custom regex patterns
-- `src/webgateway/injection/classifier.py` — Layer 2: ONNX MiniLM binary classifier
-- `src/webgateway/injection/judge.py` — Layer 3: LLM judge escalation (reuses existing LLMJudge)
-- `src/webgateway/injection/detector.py` — Composite detector orchestrating all layers + action determination
-- `src/webgateway/injection/exemptions.py` — Domain + api_key_id exemption checking
-- `src/webgateway/injection/events.py` — events.jsonl writer + webhook trigger
+- `src/serp_llm/injection/__init__.py` — Public API exports
+- `src/serp_llm/injection/types.py` — Result dataclasses, InjectionType enum, InjectionBlockedError
+- `src/serp_llm/injection/heuristics.py` — Layer 1: Rebuff + custom regex patterns
+- `src/serp_llm/injection/classifier.py` — Layer 2: ONNX MiniLM binary classifier
+- `src/serp_llm/injection/judge.py` — Layer 3: LLM judge escalation (reuses existing LLMJudge)
+- `src/serp_llm/injection/detector.py` — Composite detector orchestrating all layers + action determination
+- `src/serp_llm/injection/exemptions.py` — Domain + api_key_id exemption checking
+- `src/serp_llm/injection/events.py` — events.jsonl writer + webhook trigger
 - `tests/unit/test_injection_types.py`
 - `tests/unit/test_injection_heuristics.py`
 - `tests/unit/test_injection_classifier.py`
@@ -32,13 +32,13 @@
 - `scripts/fetch_injection_model.py` — Build-time model download script
 
 **Modified files:**
-- `src/webgateway/post_processing/cleaners.py` — Add zero-width character stripping
-- `src/webgateway/post_processing/pipeline.py` — Add Stage 5 injection detection call
-- `src/webgateway/config.py` — Add PromptInjectionConfig and sub-models
-- `src/webgateway/audit.py` — Add injection fields to AuditEntry
-- `src/webgateway/schemas.py` — Add PromptInjectionInfo, PromptInjectionOverride
-- `src/webgateway/service.py` — Wire exemptions, override check, action handling
-- `src/webgateway/main.py` — Construct detector, register exception handler
+- `src/serp_llm/post_processing/cleaners.py` — Add zero-width character stripping
+- `src/serp_llm/post_processing/pipeline.py` — Add Stage 5 injection detection call
+- `src/serp_llm/config.py` — Add PromptInjectionConfig and sub-models
+- `src/serp_llm/audit.py` — Add injection fields to AuditEntry
+- `src/serp_llm/schemas.py` — Add PromptInjectionInfo, PromptInjectionOverride
+- `src/serp_llm/service.py` — Wire exemptions, override check, action handling
+- `src/serp_llm/main.py` — Construct detector, register exception handler
 - `config.yaml` — Add prompt_injection section
 - `config.test.yaml` — Add disabled prompt_injection section
 - `pyproject.toml` — Add optional `injection` dependencies
@@ -50,7 +50,7 @@
 ## Task 1: Config Models
 
 **Files:**
-- Modify: `src/webgateway/config.py` (after `PostProcessingConfig`, before `GatewayConfig` — around line 320)
+- Modify: `src/serp_llm/config.py` (after `PostProcessingConfig`, before `GatewayConfig` — around line 320)
 - Test: `tests/unit/test_injection_types.py` (config parsing tests)
 
 - [ ] **Step 1: Write the failing test for config parsing**
@@ -60,7 +60,7 @@ Create `tests/unit/test_injection_types.py`:
 ```python
 from __future__ import annotations
 
-import webgateway.config as cfg
+import serp_llm.config as cfg
 
 
 class TestPromptInjectionConfig:
@@ -142,9 +142,9 @@ class TestPromptInjectionConfig:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `source .venv/bin/activate && python -m pytest tests/unit/test_injection_types.py::TestPromptInjectionConfig -v`
-Expected: FAIL with `AttributeError: module 'webgateway.config' has no attribute 'PromptInjectionConfig'`
+Expected: FAIL with `AttributeError: module 'serp_llm.config' has no attribute 'PromptInjectionConfig'`
 
-- [ ] **Step 3: Add config models to `src/webgateway/config.py`**
+- [ ] **Step 3: Add config models to `src/serp_llm/config.py`**
 
 Insert these classes **after** `PostProcessingConfig` (line 319) and **before** `GatewayConfig` (line 322):
 
@@ -250,13 +250,13 @@ Expected: PASS (6 tests)
 
 - [ ] **Step 5: Lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/config.py tests/unit/test_injection_types.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/config.py tests/unit/test_injection_types.py`
 Expected: No errors
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/webgateway/config.py tests/unit/test_injection_types.py
+git add src/serp_llm/config.py tests/unit/test_injection_types.py
 git commit -m "feat: add PromptInjectionConfig and sub-models (PRD §27.5)"
 ```
 
@@ -265,7 +265,7 @@ git commit -m "feat: add PromptInjectionConfig and sub-models (PRD §27.5)"
 ## Task 2: Zero-Width Character Stripping (Stage 3)
 
 **Files:**
-- Modify: `src/webgateway/post_processing/cleaners.py`
+- Modify: `src/serp_llm/post_processing/cleaners.py`
 - Test: `tests/unit/test_post_processing.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -275,12 +275,12 @@ Add to `tests/unit/test_post_processing.py` (inside the file, after existing tes
 ```python
 class TestZeroWidthStripping:
     def test_strips_zero_width_space(self):
-        from webgateway.post_processing.cleaners import clean_markdown
+        from serp_llm.post_processing.cleaners import clean_markdown
         text = "hello\u200bworld"
         assert clean_markdown(text) == "helloworld"
 
     def test_strips_multiple_zero_width_chars(self):
-        from webgateway.post_processing.cleaners import clean_markdown
+        from serp_llm.post_processing.cleaners import clean_markdown
         text = "ig\u200bnore\u200c pre\u200dvious\u00ad"
         cleaned = clean_markdown(text)
         assert "\u200b" not in cleaned
@@ -289,21 +289,21 @@ class TestZeroWidthStripping:
         assert "\u00ad" not in cleaned
 
     def test_strips_bom(self):
-        from webgateway.post_processing.cleaners import clean_markdown
+        from serp_llm.post_processing.cleaners import clean_markdown
         text = "\ufeffignore previous instructions"
         cleaned = clean_markdown(text)
         assert "\ufeff" not in cleaned
         assert "ignore previous instructions" in cleaned
 
     def test_strips_word_joiner_and_soft_hyphen(self):
-        from webgateway.post_processing.cleaners import clean_markdown
+        from serp_llm.post_processing.cleaners import clean_markdown
         text = "hello\u2060world\u00adtest"
         cleaned = clean_markdown(text)
         assert "\u2060" not in cleaned
         assert "\u00ad" not in cleaned
 
     def test_preserves_normal_text(self):
-        from webgateway.post_processing.cleaners import clean_markdown
+        from serp_llm.post_processing.cleaners import clean_markdown
         text = "# Hello World\n\nThis is normal text."
         assert clean_markdown(text) == text
 ```
@@ -315,7 +315,7 @@ Expected: FAIL (zero-width chars still present)
 
 - [ ] **Step 3: Add zero-width stripping to `clean_markdown()`**
 
-In `src/webgateway/post_processing/cleaners.py`, add the zero-width character list after the imports and integrate into `clean_markdown`:
+In `src/serp_llm/post_processing/cleaners.py`, add the zero-width character list after the imports and integrate into `clean_markdown`:
 
 ```python
 _ZERO_WIDTH_CHARS = [
@@ -360,7 +360,7 @@ Expected: ALL PASS (existing tests + new zero-width tests)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/webgateway/post_processing/cleaners.py tests/unit/test_post_processing.py
+git add src/serp_llm/post_processing/cleaners.py tests/unit/test_post_processing.py
 git commit -m "feat: strip zero-width Unicode chars in Stage 3 cleaning (PRD §27.6)"
 ```
 
@@ -369,8 +369,8 @@ git commit -m "feat: strip zero-width Unicode chars in Stage 3 cleaning (PRD §2
 ## Task 3: Injection Types and Exceptions
 
 **Files:**
-- Create: `src/webgateway/injection/__init__.py`
-- Create: `src/webgateway/injection/types.py`
+- Create: `src/serp_llm/injection/__init__.py`
+- Create: `src/serp_llm/injection/types.py`
 - Test: `tests/unit/test_injection_types.py` (add new class)
 
 - [ ] **Step 1: Write the failing test**
@@ -380,7 +380,7 @@ Append to `tests/unit/test_injection_types.py`:
 ```python
 class TestInjectionTypes:
     def test_injection_blocked_error_carries_metadata(self):
-        from webgateway.injection.types import InjectionBlockedError
+        from serp_llm.injection.types import InjectionBlockedError
 
         err = InjectionBlockedError(
             url="https://evil.com",
@@ -396,7 +396,7 @@ class TestInjectionTypes:
         assert "prompt injection" in str(err).lower()
 
     def test_injection_detection_result_defaults(self):
-        from webgateway.injection.types import InjectionDetectionResult
+        from serp_llm.injection.types import InjectionDetectionResult
 
         result = InjectionDetectionResult()
         assert result.checked is False
@@ -410,7 +410,7 @@ class TestInjectionTypes:
         assert result.scrubbed_segments == 0
 
     def test_injection_detection_result_detected(self):
-        from webgateway.injection.types import InjectionDetectionResult
+        from serp_llm.injection.types import InjectionDetectionResult
 
         result = InjectionDetectionResult(
             checked=True,
@@ -431,11 +431,11 @@ class TestInjectionTypes:
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `source .venv/bin/activate && python -m pytest tests/unit/test_injection_types.py::TestInjectionTypes -v`
-Expected: FAIL with `ModuleNotFoundError: No module named 'webgateway.injection'`
+Expected: FAIL with `ModuleNotFoundError: No module named 'serp_llm.injection'`
 
 - [ ] **Step 3: Create the injection package**
 
-Create `src/webgateway/injection/__init__.py`:
+Create `src/serp_llm/injection/__init__.py`:
 
 ```python
 """Prompt injection detection (PRD §27).
@@ -445,7 +445,7 @@ Optional: LLM judge escalation, Lakera Guard.
 """
 ```
 
-Create `src/webgateway/injection/types.py`:
+Create `src/serp_llm/injection/types.py`:
 
 ```python
 """Core data structures for prompt injection detection."""
@@ -524,8 +524,8 @@ Expected: ALL PASS
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/ tests/unit/test_injection_types.py
-git add src/webgateway/injection/__init__.py src/webgateway/injection/types.py tests/unit/test_injection_types.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/ tests/unit/test_injection_types.py
+git add src/serp_llm/injection/__init__.py src/serp_llm/injection/types.py tests/unit/test_injection_types.py
 git commit -m "feat: add injection detection types and InjectionBlockedError (PRD §27.4, §27.7)"
 ```
 
@@ -534,7 +534,7 @@ git commit -m "feat: add injection detection types and InjectionBlockedError (PR
 ## Task 4: Layer 1 — Rebuff Heuristics
 
 **Files:**
-- Create: `src/webgateway/injection/heuristics.py`
+- Create: `src/serp_llm/injection/heuristics.py`
 - Test: `tests/unit/test_injection_heuristics.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -546,7 +546,7 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.injection.heuristics import HeuristicLayer
+from serp_llm.injection.heuristics import HeuristicLayer
 
 
 class TestHeuristicLayer:
@@ -614,7 +614,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement the heuristics layer**
 
-Create `src/webgateway/injection/heuristics.py`:
+Create `src/serp_llm/injection/heuristics.py`:
 
 ```python
 """Layer 1: Rebuff-inspired heuristic pattern matching.
@@ -636,7 +636,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from webgateway.injection.types import InjectionType
+from serp_llm.injection.types import InjectionType
 
 # Each pattern maps to an injection type. Ordered by priority.
 _DEFAULT_PATTERNS: list[tuple[str, InjectionType, str]] = [
@@ -754,8 +754,8 @@ Expected: ALL PASS (11 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/heuristics.py tests/unit/test_injection_heuristics.py
-git add src/webgateway/injection/heuristics.py tests/unit/test_injection_heuristics.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/heuristics.py tests/unit/test_injection_heuristics.py
+git add src/serp_llm/injection/heuristics.py tests/unit/test_injection_heuristics.py
 git commit -m "feat: add Layer 1 heuristic injection detection (PRD §27.3)"
 ```
 
@@ -764,7 +764,7 @@ git commit -m "feat: add Layer 1 heuristic injection detection (PRD §27.3)"
 ## Task 5: Layer 2 — ONNX MiniLM Classifier
 
 **Files:**
-- Create: `src/webgateway/injection/classifier.py`
+- Create: `src/serp_llm/injection/classifier.py`
 - Test: `tests/unit/test_injection_classifier.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -776,7 +776,7 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.injection.classifier import OnnxClassifierLayer, ClassifierResult
+from serp_llm.injection.classifier import OnnxClassifierLayer, ClassifierResult
 
 
 class TestOnnxClassifier:
@@ -813,7 +813,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement the ONNX classifier layer**
 
-Create `src/webgateway/injection/classifier.py`:
+Create `src/serp_llm/injection/classifier.py`:
 
 ```python
 """Layer 2: MiniLM ONNX binary classifier for prompt injection.
@@ -876,7 +876,7 @@ class OnnxClassifierLayer:
         except ImportError:
             logger.debug(
                 "onnxruntime/transformers not installed — classifier disabled. "
-                "Install with: pip install 'webgateway[injection]'"
+                "Install with: pip install 'serp_llm[injection]'"
             )
         except Exception as exc:
             logger.warning("Failed to load ONNX classifier: %s", exc)
@@ -918,8 +918,8 @@ Expected: ALL PASS (4 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/classifier.py tests/unit/test_injection_classifier.py
-git add src/webgateway/injection/classifier.py tests/unit/test_injection_classifier.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/classifier.py tests/unit/test_injection_classifier.py
+git add src/serp_llm/injection/classifier.py tests/unit/test_injection_classifier.py
 git commit -m "feat: add Layer 2 ONNX MiniLM classifier with graceful degradation (PRD §27.3)"
 ```
 
@@ -928,7 +928,7 @@ git commit -m "feat: add Layer 2 ONNX MiniLM classifier with graceful degradatio
 ## Task 6: Layer 3 — LLM Judge Escalation
 
 **Files:**
-- Create: `src/webgateway/injection/judge.py`
+- Create: `src/serp_llm/injection/judge.py`
 - Test: `tests/unit/test_injection_judge.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -940,7 +940,7 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.injection.judge import InjectionJudge, JudgeEscalationResult
+from serp_llm.injection.judge import InjectionJudge, JudgeEscalationResult
 
 
 class TestInjectionJudge:
@@ -1010,7 +1010,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement the LLM judge escalation layer**
 
-Create `src/webgateway/injection/judge.py`:
+Create `src/serp_llm/injection/judge.py`:
 
 ```python
 """Layer 3: LLM judge escalation for prompt injection detection.
@@ -1019,7 +1019,7 @@ For content scoring above the escalation threshold on Layer 1 or Layer 2
 but below the auto-block threshold, optionally ask an LLM to confirm.
 
 Reuses the same OpenAI-compatible API pattern as the existing routing
-LLMJudge (src/webgateway/judge.py). Disabled by default — each escalation
+LLMJudge (src/serp_llm/judge.py). Disabled by default — each escalation
 adds latency.
 """
 
@@ -1032,7 +1032,7 @@ from typing import Any
 
 import httpx
 
-from webgateway.injection.types import InjectionType
+from serp_llm.injection.types import InjectionType
 
 logger = logging.getLogger(__name__)
 
@@ -1192,8 +1192,8 @@ Expected: ALL PASS (5 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/judge.py tests/unit/test_injection_judge.py
-git add src/webgateway/injection/judge.py tests/unit/test_injection_judge.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/judge.py tests/unit/test_injection_judge.py
+git add src/serp_llm/injection/judge.py tests/unit/test_injection_judge.py
 git commit -m "feat: add Layer 3 LLM judge escalation for injection confirmation (PRD §27.3)"
 ```
 
@@ -1202,7 +1202,7 @@ git commit -m "feat: add Layer 3 LLM judge escalation for injection confirmation
 ## Task 7: Exemption Checking
 
 **Files:**
-- Create: `src/webgateway/injection/exemptions.py`
+- Create: `src/serp_llm/injection/exemptions.py`
 - Test: `tests/unit/test_injection_exemptions.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1214,7 +1214,7 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.injection.exemptions import is_exempt
+from serp_llm.injection.exemptions import is_exempt
 
 
 class TestExemptions:
@@ -1284,7 +1284,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement exemption checking**
 
-Create `src/webgateway/injection/exemptions.py`:
+Create `src/serp_llm/injection/exemptions.py`:
 
 ```python
 """Exemption enforcement for prompt injection detection (PRD §27.5).
@@ -1342,8 +1342,8 @@ Expected: ALL PASS (7 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/exemptions.py tests/unit/test_injection_exemptions.py
-git add src/webgateway/injection/exemptions.py tests/unit/test_injection_exemptions.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/exemptions.py tests/unit/test_injection_exemptions.py
+git add src/serp_llm/injection/exemptions.py tests/unit/test_injection_exemptions.py
 git commit -m "feat: add injection detection exemption enforcement (PRD §27.5)"
 ```
 
@@ -1352,7 +1352,7 @@ git commit -m "feat: add injection detection exemption enforcement (PRD §27.5)"
 ## Task 8: Composite Detector
 
 **Files:**
-- Create: `src/webgateway/injection/detector.py`
+- Create: `src/serp_llm/injection/detector.py`
 - Test: `tests/unit/test_injection_detector.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1364,9 +1364,9 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.config import PromptInjectionConfig
-from webgateway.injection.detector import InjectionDetector
-from webgateway.injection.types import InjectionDetectionResult
+from serp_llm.config import PromptInjectionConfig
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.injection.types import InjectionDetectionResult
 
 
 class TestInjectionDetector:
@@ -1471,7 +1471,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement the composite detector**
 
-Create `src/webgateway/injection/detector.py`:
+Create `src/serp_llm/injection/detector.py`:
 
 ```python
 """Composite prompt injection detector (PRD §27.3–§27.4).
@@ -1486,11 +1486,11 @@ from __future__ import annotations
 import logging
 import re
 
-from webgateway.config import PromptInjectionConfig
-from webgateway.injection.classifier import OnnxClassifierLayer
-from webgateway.injection.heuristics import HeuristicLayer
-from webgateway.injection.judge import InjectionJudge
-from webgateway.injection.types import InjectionDetectionResult, LayerName
+from serp_llm.config import PromptInjectionConfig
+from serp_llm.injection.classifier import OnnxClassifierLayer
+from serp_llm.injection.heuristics import HeuristicLayer
+from serp_llm.injection.judge import InjectionJudge
+from serp_llm.injection.types import InjectionDetectionResult, LayerName
 
 logger = logging.getLogger(__name__)
 
@@ -1684,8 +1684,8 @@ Expected: ALL PASS (7 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/detector.py tests/unit/test_injection_detector.py
-git add src/webgateway/injection/detector.py tests/unit/test_injection_detector.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/detector.py tests/unit/test_injection_detector.py
+git add src/serp_llm/injection/detector.py tests/unit/test_injection_detector.py
 git commit -m "feat: add composite injection detector with action determination (PRD §27.3-27.4)"
 ```
 
@@ -1694,7 +1694,7 @@ git commit -m "feat: add composite injection detector with action determination 
 ## Task 9: Events Logger
 
 **Files:**
-- Create: `src/webgateway/injection/events.py`
+- Create: `src/serp_llm/injection/events.py`
 - Test: `tests/unit/test_injection_events.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1709,7 +1709,7 @@ from pathlib import Path
 
 import pytest
 
-from webgateway.injection.events import EventLogger
+from serp_llm.injection.events import EventLogger
 
 
 class TestEventLogger:
@@ -1765,7 +1765,7 @@ Expected: FAIL with `ModuleNotFoundError`
 
 - [ ] **Step 3: Implement the events logger**
 
-Create `src/webgateway/injection/events.py`:
+Create `src/serp_llm/injection/events.py`:
 
 ```python
 """events.jsonl writer for prompt injection detections (PRD §27.10).
@@ -1827,8 +1827,8 @@ Expected: ALL PASS (4 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/injection/events.py tests/unit/test_injection_events.py
-git add src/webgateway/injection/events.py tests/unit/test_injection_events.py
+source .venv/bin/activate && ruff check src/serp_llm/injection/events.py tests/unit/test_injection_events.py
+git add src/serp_llm/injection/events.py tests/unit/test_injection_events.py
 git commit -m "feat: add events.jsonl writer for injection detections (PRD §27.10)"
 ```
 
@@ -1837,7 +1837,7 @@ git commit -m "feat: add events.jsonl writer for injection detections (PRD §27.
 ## Task 10: Pipeline Integration (Stage 5)
 
 **Files:**
-- Modify: `src/webgateway/post_processing/pipeline.py`
+- Modify: `src/serp_llm/post_processing/pipeline.py`
 - Test: `tests/unit/test_injection_pipeline_integration.py`
 
 - [ ] **Step 1: Write the failing test**
@@ -1849,10 +1849,10 @@ from __future__ import annotations
 
 import pytest
 
-from webgateway.config import PromptInjectionConfig
-from webgateway.injection.detector import InjectionDetector
-from webgateway.post_processing.pipeline import PostProcessingPipeline
-from webgateway.config import PostProcessingConfig
+from serp_llm.config import PromptInjectionConfig
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.post_processing.pipeline import PostProcessingPipeline
+from serp_llm.config import PostProcessingConfig
 
 
 class TestPipelineStage5:
@@ -1941,13 +1941,13 @@ Expected: FAIL — `PostProcessingPipeline.__init__()` doesn't accept `injection
 
 - [ ] **Step 3: Modify the pipeline to add Stage 5**
 
-In `src/webgateway/post_processing/pipeline.py`, make these changes:
+In `src/serp_llm/post_processing/pipeline.py`, make these changes:
 
 **a) Update imports** (after existing imports):
 
 ```python
-from webgateway.injection.detector import InjectionDetector
-from webgateway.injection.types import InjectionDetectionResult
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.injection.types import InjectionDetectionResult
 ```
 
 **b) Add injection field to PostProcessingResult** (add to the dataclass):
@@ -2048,8 +2048,8 @@ Expected: ALL PASS
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/post_processing/pipeline.py tests/unit/test_injection_pipeline_integration.py
-git add src/webgateway/post_processing/pipeline.py tests/unit/test_injection_pipeline_integration.py
+source .venv/bin/activate && ruff check src/serp_llm/post_processing/pipeline.py tests/unit/test_injection_pipeline_integration.py
+git add src/serp_llm/post_processing/pipeline.py tests/unit/test_injection_pipeline_integration.py
 git commit -m "feat: wire Stage 5 injection detection into post-processing pipeline (PRD §27)"
 ```
 
@@ -2058,7 +2058,7 @@ git commit -m "feat: wire Stage 5 injection detection into post-processing pipel
 ## Task 11: Schemas (Request/Response Models)
 
 **Files:**
-- Modify: `src/webgateway/schemas.py`
+- Modify: `src/serp_llm/schemas.py`
 - Test: `tests/unit/test_injection_types.py` (add schema tests)
 
 - [ ] **Step 1: Write the failing test**
@@ -2068,17 +2068,17 @@ Append to `tests/unit/test_injection_types.py`:
 ```python
 class TestInjectionSchemas:
     def test_prompt_injection_override_defaults(self):
-        from webgateway.schemas import PromptInjectionOverride
+        from serp_llm.schemas import PromptInjectionOverride
         override = PromptInjectionOverride()
         assert override.skip is False
 
     def test_prompt_injection_override_skip_true(self):
-        from webgateway.schemas import PromptInjectionOverride
+        from serp_llm.schemas import PromptInjectionOverride
         override = PromptInjectionOverride(skip=True)
         assert override.skip is True
 
     def test_prompt_injection_info_defaults(self):
-        from webgateway.schemas import PromptInjectionInfo
+        from serp_llm.schemas import PromptInjectionInfo
         info = PromptInjectionInfo()
         assert info.checked is False
         assert info.detected is False
@@ -2090,7 +2090,7 @@ class TestInjectionSchemas:
         assert info.scrubbed_segments == 0
 
     def test_extract_request_accepts_prompt_injection_override(self):
-        from webgateway.schemas import ExtractRequest, PromptInjectionOverride
+        from serp_llm.schemas import ExtractRequest, PromptInjectionOverride
         req = ExtractRequest(
             url="https://example.com",
             prompt_injection=PromptInjectionOverride(skip=True),
@@ -2099,12 +2099,12 @@ class TestInjectionSchemas:
         assert req.prompt_injection.skip is True
 
     def test_extract_request_prompt_injection_optional(self):
-        from webgateway.schemas import ExtractRequest
+        from serp_llm.schemas import ExtractRequest
         req = ExtractRequest(url="https://example.com")
         assert req.prompt_injection is None
 
     def test_extract_response_accepts_prompt_injection_info(self):
-        from webgateway.schemas import ExtractResponse, PromptInjectionInfo
+        from serp_llm.schemas import ExtractResponse, PromptInjectionInfo
         resp = ExtractResponse(
             content="text",
             url="https://example.com",
@@ -2122,7 +2122,7 @@ class TestInjectionSchemas:
 Run: `source .venv/bin/activate && python -m pytest tests/unit/test_injection_types.py::TestInjectionSchemas -v`
 Expected: FAIL with `ImportError`
 
-- [ ] **Step 3: Add schemas to `src/webgateway/schemas.py`**
+- [ ] **Step 3: Add schemas to `src/serp_llm/schemas.py`**
 
 Add after the `PostProcessingInfo` class (around line 339):
 
@@ -2193,8 +2193,8 @@ Expected: ALL PASS (6 tests)
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/schemas.py tests/unit/test_injection_types.py
-git add src/webgateway/schemas.py tests/unit/test_injection_types.py
+source .venv/bin/activate && ruff check src/serp_llm/schemas.py tests/unit/test_injection_types.py
+git add src/serp_llm/schemas.py tests/unit/test_injection_types.py
 git commit -m "feat: add PromptInjectionInfo and Override schemas (PRD §27.8-27.9)"
 ```
 
@@ -2203,11 +2203,11 @@ git commit -m "feat: add PromptInjectionInfo and Override schemas (PRD §27.8-27
 ## Task 12: Audit Fields
 
 **Files:**
-- Modify: `src/webgateway/audit.py`
+- Modify: `src/serp_llm/audit.py`
 
 - [ ] **Step 1: Add injection fields to `AuditEntry`**
 
-In `src/webgateway/audit.py`, add these fields to the `AuditEntry` dataclass (after the existing fields, before the closing of the class — around line 72):
+In `src/serp_llm/audit.py`, add these fields to the `AuditEntry` dataclass (after the existing fields, before the closing of the class — around line 72):
 
 ```python
     # Prompt injection detection (PRD §27.10)
@@ -2228,8 +2228,8 @@ Expected: No new failures (fields have defaults, so existing AuditEntry construc
 - [ ] **Step 3: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/audit.py
-git add src/webgateway/audit.py
+source .venv/bin/activate && ruff check src/serp_llm/audit.py
+git add src/serp_llm/audit.py
 git commit -m "feat: add injection detection fields to AuditEntry (PRD §27.10)"
 ```
 
@@ -2238,7 +2238,7 @@ git commit -m "feat: add injection detection fields to AuditEntry (PRD §27.10)"
 ## Task 13: Service Integration
 
 **Files:**
-- Modify: `src/webgateway/service.py`
+- Modify: `src/serp_llm/service.py`
 
 This is the core wiring task. The service must:
 1. Accept `injection_detector` and `event_logger` in constructor
@@ -2249,7 +2249,7 @@ This is the core wiring task. The service must:
 
 - [ ] **Step 1: Update `GatewayService.__init__`**
 
-In `src/webgateway/service.py`, add two new parameters:
+In `src/serp_llm/service.py`, add two new parameters:
 
 ```python
     def __init__(
@@ -2286,11 +2286,11 @@ In `src/webgateway/service.py`, add two new parameters:
 Add imports at the top of the file (after existing imports):
 
 ```python
-from webgateway.injection.detector import InjectionDetector
-from webgateway.injection.events import EventLogger
-from webgateway.injection.exemptions import is_exempt
-from webgateway.injection.types import InjectionBlockedError
-from webgateway.schemas import PromptInjectionInfo
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.injection.events import EventLogger
+from serp_llm.injection.exemptions import is_exempt
+from serp_llm.injection.types import InjectionBlockedError
+from serp_llm.schemas import PromptInjectionInfo
 ```
 
 - [ ] **Step 2: Add exemption + override check in `extract()`**
@@ -2509,8 +2509,8 @@ Expected: No new failures
 - [ ] **Step 8: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/service.py
-git add src/webgateway/service.py
+source .venv/bin/activate && ruff check src/serp_llm/service.py
+git add src/serp_llm/service.py
 git commit -m "feat: wire injection detection into extract pipeline (PRD §27.4, §27.8-27.10)"
 ```
 
@@ -2519,16 +2519,16 @@ git commit -m "feat: wire injection detection into extract pipeline (PRD §27.4,
 ## Task 14: Main.py Wiring + Exception Handler
 
 **Files:**
-- Modify: `src/webgateway/main.py`
+- Modify: `src/serp_llm/main.py`
 
 - [ ] **Step 1: Add imports**
 
-At the top of `src/webgateway/main.py`, add:
+At the top of `src/serp_llm/main.py`, add:
 
 ```python
-from webgateway.injection.detector import InjectionDetector
-from webgateway.injection.events import EventLogger
-from webgateway.injection.types import InjectionBlockedError
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.injection.events import EventLogger
+from serp_llm.injection.types import InjectionBlockedError
 ```
 
 - [ ] **Step 2: Construct detector and event logger in lifespan**
@@ -2607,14 +2607,14 @@ After the `DlpBlockedError` handler (around line 231), add:
 
 - [ ] **Step 5: Verify app starts without errors**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.main import create_app; app = create_app(); print('OK')"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.main import create_app; app = create_app(); print('OK')"`
 Expected: `OK`
 
 - [ ] **Step 6: Lint and commit**
 
 ```bash
-source .venv/bin/activate && ruff check src/webgateway/main.py
-git add src/webgateway/main.py
+source .venv/bin/activate && ruff check src/serp_llm/main.py
+git add src/serp_llm/main.py
 git commit -m "feat: wire injection detector, event logger, and exception handler in main.py"
 ```
 
@@ -2772,7 +2772,7 @@ RUN python scripts/fetch_injection_model.py || true
 
 - [ ] **Step 6: Verify config loads correctly**
 
-Run: `source .venv/bin/activate && python -c "from webgateway.config import ConfigManager; cm = ConfigManager('config.yaml'); print('enabled:', cm.config.prompt_injection.enabled); print('layers:', cm.config.prompt_injection.layers.rebuff.enabled)"`
+Run: `source .venv/bin/activate && python -c "from serp_llm.config import ConfigManager; cm = ConfigManager('config.yaml'); print('enabled:', cm.config.prompt_injection.enabled); print('layers:', cm.config.prompt_injection.layers.rebuff.enabled)"`
 Expected: `enabled: False` / `layers: True`
 
 - [ ] **Step 7: Lint and commit**
@@ -2788,12 +2788,12 @@ git commit -m "feat: add prompt_injection config, optional deps, model fetch scr
 ## Task 16: Update `__init__.py` and Final Integration Test
 
 **Files:**
-- Modify: `src/webgateway/injection/__init__.py`
+- Modify: `src/serp_llm/injection/__init__.py`
 - Test: run full unit test suite
 
 - [ ] **Step 1: Update package exports**
 
-Update `src/webgateway/injection/__init__.py`:
+Update `src/serp_llm/injection/__init__.py`:
 
 ```python
 """Prompt injection detection (PRD §27).
@@ -2802,9 +2802,9 @@ Standard tier (v1): Rebuff heuristics + MiniLM ONNX classifier.
 Optional: LLM judge escalation, Lakera Guard.
 """
 
-from webgateway.injection.detector import InjectionDetector
-from webgateway.injection.events import EventLogger
-from webgateway.injection.types import (
+from serp_llm.injection.detector import InjectionDetector
+from serp_llm.injection.events import EventLogger
+from serp_llm.injection.types import (
     InjectionBlockedError,
     InjectionDetectionResult,
 )
@@ -2824,13 +2824,13 @@ Expected: ALL PASS (existing tests + all new injection tests)
 
 - [ ] **Step 3: Run linter on all changed files**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/ tests/unit/`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/ tests/unit/`
 Expected: No errors
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/webgateway/injection/__init__.py
+git add src/serp_llm/injection/__init__.py
 git commit -m "feat: finalize injection detection package exports + integration"
 ```
 

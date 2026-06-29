@@ -14,11 +14,11 @@
 
 **Files:**
 - Modify: `pyproject.toml` — add bcrypt, jinja2, itsdangerous, aiosqlite
-- Create: `src/webgateway/key_store.py` — SQLite api_keys table, bcrypt hash/verify, CRUD
-- Create: `src/webgateway/routes/keys.py` — GET/POST/DELETE key endpoints
-- Modify: `src/webgateway/auth.py` — dual lookup (config keys + SQLite keys + bootstrap key)
-- Modify: `src/webgateway/schemas.py` — add key CRUD schemas
-- Modify: `src/webgateway/main.py` — wire KeyStore, keys router
+- Create: `src/serp_llm/key_store.py` — SQLite api_keys table, bcrypt hash/verify, CRUD
+- Create: `src/serp_llm/routes/keys.py` — GET/POST/DELETE key endpoints
+- Modify: `src/serp_llm/auth.py` — dual lookup (config keys + SQLite keys + bootstrap key)
+- Modify: `src/serp_llm/schemas.py` — add key CRUD schemas
+- Modify: `src/serp_llm/main.py` — wire KeyStore, keys router
 - Modify: `.env.example` — add BOOTSTRAP_ADMIN_KEY
 - Modify: `config.yaml` — keep existing auth keys for backward compat
 
@@ -33,11 +33,11 @@
 ### Wave 2: Admin Session Auth + Login/Logout
 
 **Files:**
-- Create: `src/webgateway/admin_session.py` — SQLite store for admin session cookies
-- Create: `src/webgateway/templates/base.html` — base layout
-- Create: `src/webgateway/templates/login.html` — login form
-- Create: `src/webgateway/routes/admin_ui.py` — login/logout routes + all admin pages
-- Modify: `src/webgateway/main.py` — wire admin session store, templates
+- Create: `src/serp_llm/admin_session.py` — SQLite store for admin session cookies
+- Create: `src/serp_llm/templates/base.html` — base layout
+- Create: `src/serp_llm/templates/login.html` — login form
+- Create: `src/serp_llm/routes/admin_ui.py` — login/logout routes + all admin pages
+- Modify: `src/serp_llm/main.py` — wire admin session store, templates
 
 - [ ] **Step 1: Create AdminSessionStore class**
 - [ ] **Step 2: Create Jinja2 templates directory + base template**
@@ -48,14 +48,14 @@
 ### Wave 3: Admin UI Pages
 
 **Files:**
-- Create: `src/webgateway/templates/dashboard.html`
-- Create: `src/webgateway/templates/keys.html`
-- Create: `src/webgateway/templates/providers.html`
-- Create: `src/webgateway/templates/sessions.html`
-- Create: `src/webgateway/templates/usage.html`
-- Create: `src/webgateway/templates/logs.html`
-- Create: `src/webgateway/templates/cache.html`
-- Modify: `src/webgateway/routes/admin_ui.py` — add all page routes
+- Create: `src/serp_llm/templates/dashboard.html`
+- Create: `src/serp_llm/templates/keys.html`
+- Create: `src/serp_llm/templates/providers.html`
+- Create: `src/serp_llm/templates/sessions.html`
+- Create: `src/serp_llm/templates/usage.html`
+- Create: `src/serp_llm/templates/logs.html`
+- Create: `src/serp_llm/templates/cache.html`
+- Modify: `src/serp_llm/routes/admin_ui.py` — add all page routes
 
 - [ ] **Step 1: Create dashboard page + route**
 - [ ] **Step 2: Create keys page + route**
@@ -68,14 +68,14 @@
 ### Wave 4: OpenAPI Spec Quality + Swagger UI
 
 **Files:**
-- Modify: `src/webgateway/main.py` — add OpenAPI metadata, mount docs
-- Modify: `src/webgateway/routes/search.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/extract.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/health.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/providers.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/admin.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/cache.py` — add summaries, descriptions, tags
-- Modify: `src/webgateway/routes/sessions_admin.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/main.py` — add OpenAPI metadata, mount docs
+- Modify: `src/serp_llm/routes/search.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/extract.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/health.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/providers.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/admin.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/cache.py` — add summaries, descriptions, tags
+- Modify: `src/serp_llm/routes/sessions_admin.py` — add summaries, descriptions, tags
 
 - [ ] **Step 1: Enhance FastAPI app creation with OpenAPI metadata**
 - [ ] **Step 2: Add summaries/descriptions/tags to all existing route handlers**

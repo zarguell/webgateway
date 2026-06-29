@@ -8,7 +8,7 @@
 
 ## 1. Scope
 
-Three new provider adapters for the WebGateway, all **search-only** (no extract/extraction):
+Three new provider adapters for the serpLLM, all **search-only** (no extract/extraction):
 
 | Provider | Specialization | Hosting | Docs source |
 |----------|---------------|---------|-------------|
@@ -210,7 +210,7 @@ ProviderMetadata(
 
 ## 5. Registry Changes
 
-In `src/webgateway/providers/registry.py` `_create_adapter()`:
+In `src/serp_llm/providers/registry.py` `_create_adapter()`:
 
 ```python
 if name == "context7":
@@ -275,7 +275,7 @@ devdocs:
     start_period: 15s
 ```
 
-DevDocs is a standard service — no depends_on needed for webgateway since DevDocs is optional (graceful degradation).
+DevDocs is a standard service — no depends_on needed for serp_llm since DevDocs is optional (graceful degradation).
 
 ---
 
@@ -318,11 +318,11 @@ _RATE_LIMIT_DELAYS = {
 
 | File | Action |
 |------|--------|
-| `src/webgateway/providers/context7.py` | Create |
-| `src/webgateway/providers/perplexity.py` | Create |
-| `src/webgateway/providers/devdocs.py` | Create |
-| `src/webgateway/providers/registry.py` | Edit (3 imports + 3 if-blocks) |
-| `src/webgateway/providers/__init__.py` | Edit (docstring update) |
+| `src/serp_llm/providers/context7.py` | Create |
+| `src/serp_llm/providers/perplexity.py` | Create |
+| `src/serp_llm/providers/devdocs.py` | Create |
+| `src/serp_llm/providers/registry.py` | Edit (3 imports + 3 if-blocks) |
+| `src/serp_llm/providers/__init__.py` | Edit (docstring update) |
 | `config.yaml` | Edit (3 provider blocks) |
 | `config.test.yaml` | Edit (3 provider blocks) |
 | `docker-compose.test.yml` | Edit (DevDocs service) |

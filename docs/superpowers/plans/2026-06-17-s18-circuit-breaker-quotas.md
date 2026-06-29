@@ -14,13 +14,13 @@
 
 | File | Responsibility |
 |------|----------------|
-| `src/webgateway/resource_manager.py` | **New** — `ProviderResourceManager` with circuit breaker state machine, quota tracking, `filter_available()`, summary/history |
-| `src/webgateway/config.py` | **Modify** — Add `CircuitBreakerProviderConfig`, `CircuitBreakerConfig`, `QuotaProviderConfig`, `QuotasConfig`, `AlertEvent` models; add 3 fields to `GatewayConfig` |
-| `src/webgateway/schemas.py` | **Modify** — Add `UsageSummaryItem`, `UsageSummaryResponse`, `UsageHistoryItem`, `QuotaResetRequest`, `QuotaOverrideRequest`, `CircuitResetRequest`; add `circuit_state` and `quota_pct` to `ProviderHealthInfo` |
-| `src/webgateway/service.py` | **Modify** — Accept `resource_manager` in constructor; call `record_success`, `record_usage`, `record_failure`; call `filter_available` in `_execute_with_fallback` |
-| `src/webgateway/routes/admin.py` | **Modify** — Add 5 admin endpoints for usage summary, usage history, quota reset, quota override, circuit reset |
-| `src/webgateway/routes/health.py` | **Modify** — Include circuit_state + quota_pct in health response |
-| `src/webgateway/main.py` | **Modify** — Instantiate `ProviderResourceManager` and pass to `GatewayService` |
+| `src/serp_llm/resource_manager.py` | **New** — `ProviderResourceManager` with circuit breaker state machine, quota tracking, `filter_available()`, summary/history |
+| `src/serp_llm/config.py` | **Modify** — Add `CircuitBreakerProviderConfig`, `CircuitBreakerConfig`, `QuotaProviderConfig`, `QuotasConfig`, `AlertEvent` models; add 3 fields to `GatewayConfig` |
+| `src/serp_llm/schemas.py` | **Modify** — Add `UsageSummaryItem`, `UsageSummaryResponse`, `UsageHistoryItem`, `QuotaResetRequest`, `QuotaOverrideRequest`, `CircuitResetRequest`; add `circuit_state` and `quota_pct` to `ProviderHealthInfo` |
+| `src/serp_llm/service.py` | **Modify** — Accept `resource_manager` in constructor; call `record_success`, `record_usage`, `record_failure`; call `filter_available` in `_execute_with_fallback` |
+| `src/serp_llm/routes/admin.py` | **Modify** — Add 5 admin endpoints for usage summary, usage history, quota reset, quota override, circuit reset |
+| `src/serp_llm/routes/health.py` | **Modify** — Include circuit_state + quota_pct in health response |
+| `src/serp_llm/main.py` | **Modify** — Instantiate `ProviderResourceManager` and pass to `GatewayService` |
 | `config.yaml` | **Modify** — Add `circuit_breaker:`, `quotas:`, `alerts:` blocks |
 | `config.test.yaml` | **Modify** — Add simplified circuit_breaker + quota blocks |
 | `tests/unit/test_resource_manager.py` | **New** — Unit tests for full circuit breaker state machine, quota tracking, and `filter_available` |
@@ -30,7 +30,7 @@
 ### Task 1: Add config models
 
 **Files:**
-- Modify: `src/webgateway/config.py`
+- Modify: `src/serp_llm/config.py`
 
 - [ ] **Step 1: Add circuit breaker config models**
 
@@ -81,7 +81,7 @@ Add to `GatewayConfig` class (after line ~231 `cache` field):
 
 - [ ] **Step 4: Run lint to verify**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/config.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/config.py`
 Expected: no errors
 
 ---
@@ -89,13 +89,13 @@ Expected: no errors
 ### Task 2: Add auth + admin dependency for admin routes
 
 **Files:**
-- Modify: `src/webgateway/routes/admin.py`
+- Modify: `src/serp_llm/routes/admin.py`
 
-The admin router currently uses `verify_admin` from `webgateway.auth`. Let's verify it exists and check the pattern.
+The admin router currently uses `verify_admin` from `serp_llm.auth`. Let's verify it exists and check the pattern.
 
 - [ ] **Step 1: Read auth.py to confirm verify_admin signature**
 
-Read `src/webgateway/auth.py` to ensure `verify_admin` returns `AuthKey`.
+Read `src/serp_llm/auth.py` to ensure `verify_admin` returns `AuthKey`.
 
 - [ ] **Step 2: No change needed** — admin routes already use `Depends(verify_admin)` pattern. We'll add new endpoints in Task 7.
 
@@ -104,7 +104,7 @@ Read `src/webgateway/auth.py` to ensure `verify_admin` returns `AuthKey`.
 ### Task 3: Create ProviderResourceManager — circuit breaker
 
 **Files:**
-- Create: `src/webgateway/resource_manager.py`
+- Create: `src/serp_llm/resource_manager.py`
 
 - [ ] **Step 1: Write the module skeleton with SQLite init**
 
@@ -124,7 +124,7 @@ import time
 from pathlib import Path
 from typing import Any, Literal
 
-from webgateway.config import GatewayConfig
+from serp_llm.config import GatewayConfig
 
 __all__ = ["ProviderResourceManager"]
 
@@ -347,7 +347,7 @@ Add inside `ProviderResourceManager`, after `close()`:
 
 Add to imports:
 ```python
-from webgateway.config import (
+from serp_llm.config import (
     AlertConfig,
     CircuitBreakerConfig,
     CircuitBreakerProviderConfig,
@@ -362,7 +362,7 @@ from webgateway.config import (
 ### Task 4: ProviderResourceManager — quota tracking + filter_available
 
 **Files:**
-- Modify: `src/webgateway/resource_manager.py`
+- Modify: `src/serp_llm/resource_manager.py`
 
 - [ ] **Step 1: Add quota tracking methods**
 
@@ -584,7 +584,7 @@ Add after `filter_available()`:
 ### Task 5: Add API schemas
 
 **Files:**
-- Modify: `src/webgateway/schemas.py`
+- Modify: `src/serp_llm/schemas.py`
 
 - [ ] **Step 1: Add circuit_state and quota_pct to ProviderHealthInfo**
 
@@ -640,7 +640,7 @@ class CircuitResetRequest(BaseModel):
 
 - [ ] **Step 3: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/schemas.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/schemas.py`
 Expected: no errors
 
 ---
@@ -648,14 +648,14 @@ Expected: no errors
 ### Task 6: Wire ProviderResourceManager into service + main
 
 **Files:**
-- Modify: `src/webgateway/service.py`
-- Modify: `src/webgateway/main.py`
+- Modify: `src/serp_llm/service.py`
+- Modify: `src/serp_llm/main.py`
 
 - [ ] **Step 1: Add resource_manager parameter to GatewayService.__init__**
 
 In `service.py`, add import:
 ```python
-from webgateway.resource_manager import ProviderResourceManager
+from serp_llm.resource_manager import ProviderResourceManager
 ```
 
 In `__init__` signature, add after `dlp_middleware` param:
@@ -770,7 +770,7 @@ Pass it to GatewayService:
 
 - [ ] **Step 6: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/service.py src/webgateway/main.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/service.py src/serp_llm/main.py`
 Expected: no errors
 
 ---
@@ -778,13 +778,13 @@ Expected: no errors
 ### Task 7: Add admin endpoints
 
 **Files:**
-- Modify: `src/webgateway/routes/admin.py`
+- Modify: `src/serp_llm/routes/admin.py`
 
 - [ ] **Step 1: Add imports at top of admin.py**
 
 ```python
-from webgateway.resource_manager import ProviderResourceManager
-from webgateway.schemas import (
+from serp_llm.resource_manager import ProviderResourceManager
+from serp_llm.schemas import (
     CircuitResetRequest,
     QuotaOverrideRequest,
     QuotaResetRequest,
@@ -882,7 +882,7 @@ async def circuit_reset(
 
 - [ ] **Step 5: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/routes/admin.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/routes/admin.py`
 Expected: no errors
 
 ---
@@ -890,13 +890,13 @@ Expected: no errors
 ### Task 8: Update health endpoint
 
 **Files:**
-- Modify: `src/webgateway/routes/health.py`
+- Modify: `src/serp_llm/routes/health.py`
 
 - [ ] **Step 1: Add circuit + quota info to health response**
 
 Import `ProviderResourceManager` at the top:
 ```python
-from webgateway.resource_manager import ProviderResourceManager
+from serp_llm.resource_manager import ProviderResourceManager
 ```
 
 Modify the `health` function to also fetch circuit+quota data:
@@ -927,7 +927,7 @@ async def health(request: Request) -> HealthResponse:
 
 - [ ] **Step 2: Run lint**
 
-Run: `source .venv/bin/activate && ruff check src/webgateway/routes/health.py`
+Run: `source .venv/bin/activate && ruff check src/serp_llm/routes/health.py`
 Expected: no errors
 
 ---
@@ -1014,8 +1014,8 @@ import time
 
 import pytest
 
-from webgateway.config import GatewayConfig
-from webgateway.resource_manager import ProviderResourceManager
+from serp_llm.config import GatewayConfig
+from serp_llm.resource_manager import ProviderResourceManager
 
 
 @pytest.fixture

@@ -102,8 +102,8 @@ No changes needed here — just needs to receive cookies from the session manage
 ### Phase 1: Wire FlareSolverr cookie extraction
 
 **Files:**
-- `src/webgateway/providers/flaresolverr.py` — extract cookies from solution response
-- `src/webgateway/providers/base.py` — add `cookies` field to `ExtractResult`
+- `src/serp_llm/providers/flaresolverr.py` — extract cookies from solution response
+- `src/serp_llm/providers/base.py` — add `cookies` field to `ExtractResult`
 
 **Changes:**
 
@@ -135,7 +135,7 @@ return ExtractResult(
 ### Phase 2: Wire fallback orchestration
 
 **File:**
-- `src/webgateway/service.py` — bot block handling in `_execute_with_fallback`
+- `src/serp_llm/service.py` — bot block handling in `_execute_with_fallback`
 
 **Logic:**
 
@@ -158,7 +158,7 @@ if _is_bot_block(content):
 ### Phase 3: Session reuse
 
 **File:**
-- `src/webgateway/service.py` — extract phase
+- `src/serp_llm/service.py` — extract phase
 
 Before dispatching to CDP Chrome, inject cached cookies:
 
