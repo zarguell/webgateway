@@ -29,3 +29,6 @@ Thumbs.db
 
 # OpenCode session state
 .omo/
+
+# Playwright MCP artifacts
+.playwright-mcp/
