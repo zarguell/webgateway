@@ -53,12 +53,6 @@ providers:
     cost_units_per_call: 0.8
     enabled: true
 
-  devdocs:
-    base_url: http://devdocs:9292
-    specialization: docs
-    cost_units_per_call: 0.0
-    enabled: true
-
 auth:
   keys:
     - id: key_agent1

@@ -140,8 +140,6 @@ providers:
     base_url: http://crawl4ai:11235
   invisible_playwright:
     base_url: http://invisible-playwright:3001
-  devdocs:
-    base_url: http://devdocs:9292
 
 auth:
   keys:

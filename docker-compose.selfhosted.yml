@@ -102,20 +102,6 @@ services:
       retries: 5
       start_period: 40s
 
-  devdocs:
-    image: ghcr.io/freecodecamp/devdocs:latest-alpine
-    container_name: serpllm-devdocs
-    restart: unless-stopped
-    networks:
-      - serpllm-net
-    # NO traefik labels — internal only
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9292/ping"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-
   invisible-playwright:
     image: serpllm/invisible-playwright:latest
     container_name: serpllm-ipw

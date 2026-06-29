@@ -51,7 +51,7 @@ curl -X POST http://localhost:8080/extract \
 
 | Capability | What it does |
 |---|---|
-| **16 providers** | Self-hosted: SearXNG, DevDocs, Crawl4AI, InvisiblePlaywright, FlareSolverr. Cloud: Jina, Brave, Tavily, Firecrawl, Exa, Context7, Perplexity, Zyte. Free: DuckDuckGo |
+| **15+ providers** | Self-hosted: SearXNG, Crawl4AI, InvisiblePlaywright, FlareSolverr. Cloud: Jina, Brave, Tavily, Firecrawl, Exa, Context7, Perplexity, Zyte. Free: DuckDuckGo. Opt-in: DevDocs (docs only), CDP Chrome |
 | **Two-tier policy engine** | Deterministic YAML rules (domain glob, URL pattern, API key) → LLM judge on miss |
 | **DLP middleware** | Outbound + inbound regex scanning, Luhn validation, redact/block/reroute actions |
 | **Content pipeline** | Trafilatura extraction → markdownify conversion → boilerplate cleaning → dedup → prompt injection detection |
