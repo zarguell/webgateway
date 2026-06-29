@@ -289,6 +289,13 @@ def mount_mcp(
 ):
     """Mount the MCP ASGI sub-app if enabled in config.
 
+    Some MCP clients (OpenCode, issue #8058) send a GET probe to the MCP
+    endpoint expecting SSE before attempting Streamable HTTP POST.  This
+    GET handler returns a lightweight 200 so the client accepts the server
+    as alive and proceeds with POST.  Using 200 instead of 405 avoids a
+    known OpenCode bug where non-200 probe responses don't trigger fallback
+    on Linux (issue #24946).
+
     Returns the session manager async context manager if MCP was mounted,
     or ``None`` when ``config.mcp.enabled`` is ``False``.
 
@@ -304,6 +311,21 @@ def mount_mcp(
     mcp_config = config_manager.config.mcp
     if not mcp_config.enabled:
         return None
+
+    # FastAPI mounts are matched by path prefix, so a route registered on the
+    # parent app takes precedence over the sub-app mount below.  Returns 200
+    # with text/event-stream to satisfy OpenCode's SSE probe (issues #8058,
+    # #24946) without adding actual SSE session state.
+    @app.get(mcp_config.mount_path)
+    @app.get(mcp_config.mount_path + "/")
+    async def _mcp_probe():
+        from starlette.responses import Response
+
+        return Response(
+            content="",
+            status_code=200,
+            media_type="text/event-stream",
+        )
 
     mcp_server = create_mcp_server(gateway_service)
     mcp_app = mcp_server.streamable_http_app()
