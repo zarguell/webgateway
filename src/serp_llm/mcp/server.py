@@ -324,7 +324,7 @@ def mount_mcp(
         return Response(
             content="",
             status_code=200,
-            media_type="text/event-stream",
+            media_type="text/plain",
         )
 
     mcp_server = create_mcp_server(gateway_service)
