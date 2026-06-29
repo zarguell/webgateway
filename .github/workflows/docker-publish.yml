@@ -15,10 +15,24 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        variant:
+          - name: lean
+            cache_scope: lean
+            extra_tags: "true"
+          - name: injection
+            cache_scope: injection
+            build_args: |
+              ENABLE_INJECTION=1
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract tag
+        id: meta
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,31 +44,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract tag
-        id: meta
-        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+      - name: Compute tags
+        id: tags
+        run: |
+          TAG="${{ steps.meta.outputs.TAG }}"
+          BASE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          SUFFIX="${{ matrix.variant.build_args && '-injection' || '' }}"
+          echo "tags<<DELIM" >> "$GITHUB_OUTPUT"
+          echo "${BASE}:${TAG}${SUFFIX}" >> "$GITHUB_OUTPUT"
+          if [ -n "${{ matrix.variant.extra_tags }}" ]; then
+            echo "${BASE}:latest" >> "$GITHUB_OUTPUT"
+          fi
+          echo "DELIM" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push (lean — no injection model)
+      - name: Build and push (${{ matrix.variant.name }})
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.variant.cache_scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.variant.cache_scope }}
           platforms: linux/amd64,linux/arm64
-
-      - name: Build and push (full — with ONNX injection model)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.TAG }}-injection
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            ENABLE_INJECTION=1
+          build-args: ${{ matrix.variant.build_args }}

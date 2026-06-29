@@ -8,36 +8,51 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# Layer-split: install deps (heavy, slow) before copying source (changes every build).
+# A minimal package stub lets pip resolve and install all dependencies from
+# pyproject.toml alone.  This layer is cached by GHA as long as deps are unchanged.
 COPY pyproject.toml .
-COPY src/ ./src/
-COPY scripts/ ./scripts/
+RUN mkdir -p src/serp_llm && touch src/serp_llm/__init__.py
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir .
 
 ARG ENABLE_INJECTION=0
-RUN mkdir -p /app/models \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    if [ "$ENABLE_INJECTION" = "1" ]; then \
+      pip install --no-cache-dir '.[injection]'; \
+    fi
+
+# Now overlay real source — reinstalls only the package, deps already cached
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir --force-reinstall --no-deps . \
+    && mkdir -p /app/models \
     && if [ "$ENABLE_INJECTION" = "1" ]; then \
-      pip install --no-cache-dir '.[injection]' \
-      && python scripts/fetch_injection_model.py || true; \
-    else \
-      pip install --no-cache-dir .; \
+      python scripts/fetch_injection_model.py || true; \
     fi
 
 # Strip build-only packages that bloat the runtime image
 RUN pip uninstall -y --no-cache-dir pip setuptools 2>/dev/null || true \
     && find /usr/local/lib/python3.12/site-packages \
          -maxdepth 1 -type d \
-       \( -name "pip*" -o -name "setuptools*" \
-       -o -name "pkg_resources" \) \
-       -exec rm -rf {} + 2>/dev/null || true
+        \( -name "pip*" -o -name "setuptools*" \
+        -o -name "pkg_resources" \) \
+        -exec rm -rf {} + 2>/dev/null || true
 
 # ----------
 # MkDocs builder stage
 FROM python:3.12-slim AS docs-builder
 
-RUN pip install --no-cache-dir mkdocs mkdocs-material
-
 WORKDIR /app
-COPY docs-src/ ./docs-src/
+COPY docs-src/mkdocs.yml ./docs-src/mkdocs.yml
+
+# Layer-split: pip install cached unless mkdocs config changes
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-cache-dir mkdocs mkdocs-material
+
 COPY scripts/ ./scripts/
+COPY docs-src/ ./docs-src/
 
 # Generate provider data policy pages from metadata
 RUN python scripts/generate_provider_pages.py docs-src/docs/providers/policies
