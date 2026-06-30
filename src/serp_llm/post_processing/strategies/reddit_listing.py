@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 _MIDCOL_RE = re.compile(r'<div\s+class="midcol\s+unvoted">', re.DOTALL)
 
 # Individual field matchers — each is applied within a post block
-_SCORE_RE = re.compile(r'<div\s+class="score\s+likes"\s+title="(\d+)"')
+_SCORE_RE = re.compile(
+    r'<div\s+class="score\s+likes"(?:\s+title="(\d+)")?',
+)
 _TITLE_RE = re.compile(
     r'<a\s+class="title\s+may-blank[^"]*"\s+[^>]*href="([^"]+)"[^>]*>'
     r'(?P<title>.*?)</a>'
@@ -103,7 +105,7 @@ class RedditListingStrategy:
             if not (score_m and title_m and author_m):
                 continue
 
-            score = score_m.group(1)
+            score_raw = score_m.group(1)
             href = title_m.group(1)
             raw_title = title_m.group("title")
             domain = domain_m.group(1) if domain_m else ""
@@ -111,7 +113,7 @@ class RedditListingStrategy:
             comments_text = comments_m.group(1) if comments_m else ""
 
             title = _clean_title(raw_title)
-            score_int = int(score)
+            score_int = int(score_raw) if score_raw else 0
 
             comments_count = 0
             comments_clean = comments_text.strip().lower()
