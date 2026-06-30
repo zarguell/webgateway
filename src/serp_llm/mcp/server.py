@@ -312,19 +312,19 @@ def mount_mcp(
     if not mcp_config.enabled:
         return None
 
-    # FastAPI mounts are matched by path prefix, so a route registered on the
-    # parent app takes precedence over the sub-app mount below.  Returns 200
-    # with text/event-stream to satisfy OpenCode's SSE probe (issues #8058,
-    # #24946) without adding actual SSE session state.
+    # Some MCP clients (OpenCode, Hermes, etc.) send a GET probe to verify
+    # the endpoint is alive before attempting Streamable HTTP POST.  Return
+    # a lightweight JSON-RPC response so both SSE-probing clients (OpenCode)
+    # and JSON-expecting clients (Hermes) are satisfied.  This is a synthetic
+    # response — the actual MCP communication flows entirely over POST.
     @app.get(mcp_config.mount_path)
     @app.get(mcp_config.mount_path + "/")
     async def _mcp_probe():
-        from starlette.responses import Response
+        from starlette.responses import JSONResponse
 
-        return Response(
-            content="",
+        return JSONResponse(
+            content={"jsonrpc": "2.0", "id": None, "result": {"serverInfo": "serpLLM"}},
             status_code=200,
-            media_type="text/plain",
         )
 
     mcp_server = create_mcp_server(gateway_service)
