@@ -473,12 +473,16 @@ class GatewayService:
             query=None,
         )
 
-        if (
-            request.format == "text"
-            and request.provider is None
-            and decision.policy_matched is None
-        ):
-            decision.provider = "invisible_playwright"
+        if request.format == "text":
+            if decision.policy_matched is not None:
+                # A policy rule matched — the site has specialized extraction
+                # (strategy, readability). Don't use text mode; let the
+                # pipeline handle it in HTML mode for best results.
+                request.format = "markdown"
+            elif request.provider is None:
+                # No policy matched and no provider override — auto-route
+                # to InvisiblePlaywright since text_mode requires a browser.
+                decision.provider = "invisible_playwright"
 
         if dry_run:
             return DryRunResponse(
