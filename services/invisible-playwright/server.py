@@ -131,6 +131,48 @@ async def scrape(req: ScrapeRequest):
                         "Selector %r not found within timeout", req.wait_for_selector
                     )
 
+            # Expand collapsed content: scroll to trigger lazy loading, then
+            # uncover hidden sections by clicking "show more" buttons and removing
+            # CSS constraints on common collapsed containers.  This runs before
+            # extraction so innerText captures content that was behind interactions.
+            try:
+                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                await page.wait_for_timeout(500)
+                # Click common "show more" / "read more" buttons
+                for selector in (
+                    'button:has-text("show more")',
+                    'button:has-text("Show more")',
+                    'button:has-text("Read more")',
+                    'button:has-text("Load more")',
+                    'button:has-text("View more")',
+                    'button:has-text("See more")',
+                    '[class*="show-more"] button',
+                    '[class*="read-more"] button',
+                ):
+                    buttons = await page.query_selector_all(selector)
+                    for btn in buttons:
+                        try:
+                            await btn.click()
+                            await page.wait_for_timeout(200)
+                        except Exception:
+                            pass
+                # Force-reveal CSS-hidden content containers
+                await page.evaluate("""() => {
+                    for (const el of document.querySelectorAll(
+                        '[class*="collapsed"], [class*="folded"], ' +
+                        '[class*="truncated"], [style*="max-height"], ' +
+                        '.read-more, .show-more, .hidden-text'
+                    )) {
+                        el.style.maxHeight = 'none';
+                        el.style.overflow = 'visible';
+                        el.style.display = 'block';
+                    }
+                }""")
+                # Scroll back to top
+                await page.evaluate("window.scrollTo(0, 0)")
+            except Exception:
+                logger.debug("Content expansion skipped", exc_info=True)
+
             title = await page.title()
 
             # Return content: raw HTML for the pipeline to process (strategy extraction,
