@@ -96,7 +96,9 @@ async def scrape(req: ScrapeRequest):
             headless=True,
             humanize=False,  # skip bezier mouse for speed
         ) as browser:
-            page = await browser.new_page()
+            page = await browser.new_page(
+                viewport={"width": 1920, "height": 1080},
+            )
 
             # Inject cookies if provided
             if req.cookies:
