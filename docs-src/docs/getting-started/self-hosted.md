@@ -261,7 +261,37 @@ Traefik automatically requests certificates on first connection and renews them 
 | Crawl4AI crashes | Check memory limits. Needs at least 1 GB reserved, 4 GB limit recommended |
 | Port 443 already in use | Stop any other service listening on 443, or change Traefik's port mapping |
 | MCP client says "invalid content type" or "SSE error" | The MCP endpoint uses Streamable HTTP. Some clients probe with GET first — the server handles this. If POST requests return `421 Misdirected Request` in the logs, uvicorn is rejecting the proxied Host header. The entrypoint uses h11 by default to prevent this. If you've overridden the CMD, ensure `--http h11` is set, or set `FORWARDED_ALLOW_IPS` to your proxy's subnet |
+| MCP POST returns "Invalid Host header" or 421 | FastMCP's Streamable HTTP validates the Host header. For Traefik, add a `fix-host` middleware that sets `Host: "localhost:8080"` (the server's listening address). See the Traefik config in `dynamic/tls.yml` |
 | Reddit / protected sites blocked or CAPTCHA'd | Add a policy rule routing the domain to `invisible_playwright`. For persistent authenticated access, create a cookie session — see the [bot-protected sites guide](/sessions/bot-protected-sites/) |
+| git pull overwrites local config changes | The server runs from a git checkout. `git pull` or `git reset --hard` reverts local config edits. Use `dynamic/tls.yml` for local overrides (it's gitignored) or keep a backup of custom config changes |
+| Multi-tag push noise on GitHub | Only tag actual releases (e.g. `v0.5.0`). For dev deploys, use `git pull && docker compose build serpllm && docker compose up -d --force-recreate` — no tag or GHCR push needed |
+
+## Extraction Modes
+
+serpLLM has three extraction modes, selected automatically based on the URL and the `format` parameter:
+
+| Mode | Trigger | What it does | Best for |
+|---|---|---|---|
+| **Strategy** | Policy rule with `extract_strategy` | Site-specific HTML parser (e.g., Reddit listing feeds) | Sites with custom extractors |
+| **Readability** | `format: "markdown"` (default) | Article extraction via readability + trafilatura | News, blogs, docs, individual posts |
+| **Text** | `format: "text"` (no policy match) | `document.body.innerText` via InvisiblePlaywright | JS-heavy listing pages (Zillow, Redfin) |
+
+**How text mode works:** When an agent sends `format: "text"` and no policy rule matches the URL, the gateway automatically routes the request to InvisiblePlaywright and instructs it to extract `document.body.innerText` — the browser's built-in "select all → copy as plain text." This strips all HTML, scripts, styles, tracking, and navigation without any parsing, typically reducing 600KB+ of JS-rendered HTML to 1-15KB of clean visible text.
+
+**Policy-protected URLs:** If a policy rule matches (e.g., Reddit with its listing strategy), `format: "text"` is ignored and the pipeline uses HTML extraction — the policy knows best for that site.
+
+## Auth Keys
+
+The config file uses environment variable references for secrets:
+
+```yaml
+auth:
+  keys:
+    - id: key_agent1
+      secret: ${AGENT1_KEY}     # resolved from .env at startup
+```
+
+The `.env` file at the project root sets these values. Do NOT hardcode secrets in YAML — the config is checked into git.
 
 Reset everything and start fresh:
 

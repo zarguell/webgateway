@@ -39,24 +39,61 @@ serpLLM is **infrastructure for intelligent agents**, not a standalone tool. Age
 ### Streamable HTTP and reverse proxies
 
 serpLLM's MCP endpoint uses Streamable HTTP (POST-only JSON-RPC). Some MCP clients
-probe with a GET request first, expecting SSE. The server returns 200 on GET to
-satisfy the probe, then all actual MCP communication flows over POST.
+probe with a GET request first, expecting SSE. The server returns 200 with a JSON-RPC
+response on GET to satisfy the probe, then all actual MCP communication flows over POST.
 
-When serpLLM is deployed behind a reverse proxy (Traefik, nginx, Caddy), the
-forwarded `Host` header may not match the server's internal address. The entrypoint
-uses uvicorn's `h11` HTTP parser (instead of the default httptools) to avoid the
-strict Host validation that would reject proxied requests with `421 Misdirected
-Request`.
+When serpLLM is deployed behind a reverse proxy (Traefik, nginx, Caddy):
 
-For advanced deployments that need httptools, set the `FORWARDED_ALLOW_IPS`
-environment variable to your proxy's IP range:
+1. **Host header validation.** FastMCP's Streamable HTTP validates the Host header.
+   If using Traefik, add a `fix-host` middleware that sets `Host` to the server's
+   listening address (e.g. `localhost:8080`):
 
-```yaml
-environment:
-  FORWARDED_ALLOW_IPS: "172.18.0.0/16"
-```
+   ```yaml
+   http:
+     middlewares:
+       fix-host:
+         headers:
+           customRequestHeaders:
+             Host: "localhost:8080"
+     routers:
+       serpllm:
+         rule: Host(`your.domain.com`)
+         service: serpllm
+         middlewares:
+           - fix-host
+   ```
 
-This reverts to httptools and configures it to trust the specified proxy IPs.
+2. **uvicorn HTTP parser.** The entrypoint uses `h11` (pure-Python) by default to
+   avoid strict Host validation at the parser level. For deployments that need
+   `httptools` (for performance), set `FORWARDED_ALLOW_IPS` to your proxy's subnet:
+
+   ```yaml
+   environment:
+     FORWARDED_ALLOW_IPS: "172.18.0.0/16"
+   ```
+
+3. **GET probe response.** Some MCP clients send a GET before POST. The server
+   returns `{"jsonrpc":"2.0","id":null,"result":{"serverInfo":"serpLLM"}}` on
+   GET — a lightweight JSON-RPC response that satisfies both SSE-probing clients
+   (OpenCode) and JSON-expecting clients (Hermes).
+
+### Extraction modes
+
+The gateway has three extraction modes, selected automatically:
+
+| Mode | Trigger | Pipeline | Use case |
+|---|---|---|---|
+| **Strategy** | Policy rule with `extract_strategy` | Custom HTML parser (e.g. Reddit listing) | Sites with dedicated extractors |
+| **Readability** | Default `format: "markdown"` | readability + trafilatura → markdownify | Articles, blogs, docs |
+| **Text** | `format: "text"` (no policy match) | `document.body.innerText` via IPW | JS-heavy listing pages |
+
+**Text mode** is automatically routed to InvisiblePlaywright, which extracts
+`document.body.innerText` — the browser's built-in "select all → copy as plain
+text." This reduces 600KB+ JS-rendered pages to 1-15KB of clean visible text.
+
+When a policy rule matches a URL, `format: "text"` is upgraded to `"markdown"` so
+the policy's strategy or extraction pipeline runs normally. The agent doesn't need
+to know which mode to use for which site.
 
 ## Extraction strategies
 
