@@ -280,6 +280,25 @@ serpLLM has three extraction modes, selected automatically based on the URL and 
 
 **Policy-protected URLs:** If a policy rule matches (e.g., Reddit with its listing strategy), `format: "text"` is ignored and the pipeline uses HTML extraction — the policy knows best for that site.
 
+### Text mode limitations
+
+`innerText` returns only rendered visible DOM text. It will miss or produce incomplete
+output for:
+
+| Pattern | Why | Better approach |
+|---|---|---|
+| `display: none` / hidden elements | `innerText` skips non-rendered nodes | `textContent` — returns all text regardless of visibility |
+| `<canvas>` / SVG charts | Content is pixels or vectors, not DOM text | Screenshot + OCR, or intercept the data API |
+| Click-to-reveal / infinite scroll | Content loads on user interaction | Pre-scroll with Playwright before extracting |
+| Shadow DOM components | Standard traversal doesn't pierce shadow roots | `page.evaluate()` to reach into shadow DOM |
+| `<iframe>` content | Separate document, not in parent DOM | `page.frame().innerText` targeting the specific frame |
+| `<script>` JSON blobs (Next.js, etc.) | Data embedded for hydration, not displayed | `page.content()` + HTML parser to extract JSON |
+
+For most listing pages (Zillow, Redfin, product catalogs), the visible text is exactly
+what an agent needs — prices, descriptions, addresses, ratings. The failure patterns
+above are edge cases that readability/trafilatura also cannot handle, so text mode
+isn't losing capability the other modes had.
+
 ## Auth Keys
 
 The config file uses environment variable references for secrets:
