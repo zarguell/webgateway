@@ -118,9 +118,16 @@ class InvisiblePlaywrightAdapter:
             )
 
         data = resp.json()
+        content = str(data.get("content", ""))
+        # The IPW sidecar returns raw rendered HTML but labels it "markdown".
+        # Override to "html" so the post-processing pipeline runs extraction
+        # (trafilatura / readability) and markdown conversion on it.
+        fmt = data.get("format", "markdown")
+        if fmt == "markdown" and content.strip().startswith("<"):
+            fmt = "html"
         return ExtractResult(
-            content=str(data.get("content", "")),
-            format=data.get("format", "markdown"),
+            content=content,
+            format=fmt,
             url=str(data.get("url", url)),
             title=str(data.get("title")) if data.get("title") else None,
         )
