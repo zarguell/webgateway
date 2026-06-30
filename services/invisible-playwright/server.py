@@ -137,7 +137,7 @@ async def scrape(req: ScrapeRequest):
             # extraction so innerText captures content that was behind interactions.
             try:
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await page.wait_for_timeout(500)
+                await page.wait_for_load_state("networkidle")
                 # Click common "show more" / "read more" buttons
                 for selector in (
                     'button:has-text("show more")',
@@ -156,9 +156,12 @@ async def scrape(req: ScrapeRequest):
                             await page.wait_for_timeout(200)
                         except Exception:
                             pass
-                # Force-reveal CSS-hidden content containers
+                # Force-reveal CSS-hidden content within content containers,
+                # scoped to main content area to avoid global layout breakage.
                 await page.evaluate("""() => {
-                    for (const el of document.querySelectorAll(
+                    const root = document.querySelector('main, article, [role="main"]')
+                        || document.body;
+                    for (const el of root.querySelectorAll(
                         '[class*="collapsed"], [class*="folded"], ' +
                         '[class*="truncated"], [style*="max-height"], ' +
                         '.read-more, .show-more, .hidden-text'
@@ -168,8 +171,6 @@ async def scrape(req: ScrapeRequest):
                         el.style.display = 'block';
                     }
                 }""")
-                # Scroll back to top
-                await page.evaluate("window.scrollTo(0, 0)")
             except Exception:
                 logger.debug("Content expansion skipped", exc_info=True)
 
