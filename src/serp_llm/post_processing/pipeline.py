@@ -72,6 +72,7 @@ class PostProcessingPipeline:
         raw_len = len(content)
         pcfg = self._get_provider_config(provider or "")
         structured_data: dict | list | None = None
+        strategy_result = None
 
         # Stage 0: extraction strategy (policy-driven, JSON-LD etc.)
         # Runs on raw HTML to extract structured data. The full content still
@@ -85,16 +86,29 @@ class PostProcessingPipeline:
                 structured_data = strategy_result.structured_data
 
         # Stage 1: Main content extraction
-        extractor = pcfg.stage1_extractor
-        if format == "html" and extractor != "none":
-            extracted, _, used_fallback = extract_main_content(
-                content,
-                url,
-                extractor=extractor,
-                min_content_length=self._config.cleaning.min_content_length,
-            )
+        # If a strategy returned extracted content in Stage 0, use it directly
+        # and skip the default extractor (trafilatura / readability).  This
+        # lets custom strategies like reddit_listing replace the page content
+        # entirely rather than just enriching it with structured_data.
+        if (
+            strategy_result is not None
+            and strategy_result.content.strip()
+            and strategy_result.content != content.strip()
+        ):
+            extracted = strategy_result.content
+            used_fallback = False
+            extractor = "strategy"
         else:
-            extracted, _, used_fallback = content, format, False
+            extractor = pcfg.stage1_extractor
+            if format == "html" and extractor != "none":
+                extracted, _, used_fallback = extract_main_content(
+                    content,
+                    url,
+                    extractor=extractor,
+                    min_content_length=self._config.cleaning.min_content_length,
+                )
+            else:
+                extracted, _, used_fallback = content, format, False
 
         # Stage 1.5: JSON-LD enrichment
         # When the extractor produced thin/missed content but we found rich
