@@ -48,12 +48,18 @@ _CHUNK_RE = re.compile(
 # Extract score from a chunk: <div class="score likes" title="N">
 _SCORE_RE = re.compile(r'<div\s+class="score\s+likes"\s+title="(\d+)"', re.DOTALL)
 
-# Extract title, href, domain from a chunk
+# Extract title, href, domain from a chunk.
+# The title link may be preceded by optional flair/spans (e.g. linkflairlabel),
+# and the domain may be after the title link or after additional post-title spans.
+# Matches: <p class="title"> ... <a class="title may-blank" href="...">Title</a>
+#          ... <span class="domain">(domain)</span>
 _TITLE_RE = re.compile(
     r'<p\s+class="title">'
+    r'(?:<[^>]+>\s*)*?'  # optional spans before the title link (flair labels, etc.)
     r'<a\s+class="title\s+may-blank[^"]*"\s+[^>]*href="([^"]+)"[^>]*>'
     r'(.*?)</a>'
-    r'\s*<span\s+class="domain">\(<a[^>]*>([^<]*)</a>\)</span>',
+    r'(?:<[^>]+>[^<]*</[^>]+>\s*)*?'  # optional spans after the title link
+    r'<span\s+class="domain">\(<a[^>]*>([^<]*)</a>\)</span>',
     re.DOTALL,
 )
 
