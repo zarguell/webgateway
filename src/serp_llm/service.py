@@ -459,7 +459,7 @@ class GatewayService:
 
         decision = self._policy_engine.evaluate(
             content_type="extract",
-            url=request.url,
+            url=str(request.url),
             api_key_id=api_key_id,
             provider_override=request.provider,
             policy_override=request.policy_override,
