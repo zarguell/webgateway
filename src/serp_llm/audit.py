@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from logging.handlers import RotatingFileHandler
@@ -120,6 +121,11 @@ class AuditLogger:
         )
         file_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
         logger.addHandler(file_handler)
+
+        # Also emit to stdout so ``docker logs -f`` sees structured audit entries.
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+        logger.addHandler(stdout_handler)
 
         self._logger = logger
 
