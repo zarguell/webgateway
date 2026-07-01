@@ -188,6 +188,8 @@ class GatewayService:
         request: SearchRequest,
         api_key_id: str,
         *,
+        source_ip: str = "",
+        interface: str = "rest",
         dry_run: bool = False,
     ) -> SearchResponse | DryRunResponse:
         """Execute a search request through the full pipeline.
@@ -241,6 +243,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="search",
                         url="",
                         provider_used=decision.provider,
@@ -297,6 +302,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="search",
                         url="",
                         provider_used=cached_response.provider_used,
@@ -334,6 +342,9 @@ class GatewayService:
                 AuditEntry(
                     request_id=request_id,
                     api_key_id=api_key_id,
+                    source_ip=source_ip,
+                    interface=interface,
+                    response_bytes=0,
                     type="search",
                     url="",
                     provider_used=decision.provider,
@@ -367,6 +378,9 @@ class GatewayService:
             AuditEntry(
                 request_id=request_id,
                 api_key_id=api_key_id,
+                source_ip=source_ip,
+                interface=interface,
+                response_bytes=0,
                 type="search",
                 url="",
                 provider_used=provider_used,
@@ -439,6 +453,8 @@ class GatewayService:
         request: ExtractRequest,
         api_key_id: str,
         *,
+        source_ip: str = "",
+        interface: str = "rest",
         dry_run: bool = False,
     ) -> ExtractResponse | DryRunResponse:
         """Execute an extraction request through the full pipeline.
@@ -516,6 +532,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="extract",
                         url=str(request.url),
                         provider_used=decision.provider,
@@ -562,6 +581,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="extract",
                         url=str(request.url),
                         provider_used=decision.provider,
@@ -603,6 +625,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="extract",
                         url=str(request.url),
                         provider_used=cached_response.provider_used,
@@ -652,6 +677,9 @@ class GatewayService:
                 AuditEntry(
                     request_id=request_id,
                     api_key_id=api_key_id,
+                    source_ip=source_ip,
+                    interface=interface,
+                    response_bytes=0,
                     type="extract",
                     url=str(request.url),
                     provider_used=decision.provider,
@@ -690,6 +718,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="extract",
                         url=str(request.url),
                         provider_used=provider_used,
@@ -823,6 +854,9 @@ class GatewayService:
                     AuditEntry(
                         request_id=request_id,
                         api_key_id=api_key_id,
+                        source_ip=source_ip,
+                        interface=interface,
+                        response_bytes=0,
                         type="extract",
                         url=str(request.url),
                         provider_used=provider_used,
@@ -843,6 +877,9 @@ class GatewayService:
             AuditEntry(
                 request_id=request_id,
                 api_key_id=api_key_id,
+                source_ip=source_ip,
+                interface=interface,
+                response_bytes=0,
                 type="extract",
                 url=str(request.url),
                 provider_used=provider_used,
