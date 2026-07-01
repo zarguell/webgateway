@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from serp_llm.telemetry import resolve_client_ip
+from starlette.requests import Request
+from starlette.responses import Response
+
+from serp_llm.middleware.telemetry import TelemetryMiddleware
+from serp_llm.telemetry import TelemetryConfig, resolve_client_ip
 
 
 class _FakeRequest:
@@ -101,3 +105,89 @@ def test_enabled_empty_xff_returns_client_host():
         trusted_cidrs=["10.0.0.0/8"],
     )
     assert result == "10.0.0.42"
+
+
+# ---------------------------------------------------------------------------
+# TelemetryMiddleware tests
+# ---------------------------------------------------------------------------
+
+
+async def _dummy_handler(request):
+    """Simple handler that returns a response and asserts state."""
+    assert hasattr(request.state, "client_ip"), "client_ip not set by middleware"
+    return Response(status_code=200, content=b"ok")
+
+
+async def test_middleware_sets_client_ip_with_default_config():
+    """With config absent, client_ip falls back to request.client.host."""
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/search",
+        "headers": [],
+        "client": ("203.0.113.5", 54321),
+        "app": type("App", (), {"state": type("State", (), {"telemetry_config": None})})(),
+    }
+    req = Request(scope)
+    middleware = TelemetryMiddleware(_dummy_handler)
+    response = await middleware.dispatch(req, _dummy_handler)
+    assert response.status_code == 200
+
+
+async def test_middleware_disabled_uses_raw_ip():
+    """When telemetry config has enabled=False, use request.client.host."""
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/search",
+        "headers": [],
+        "client": ("10.0.0.5", 54321),
+        "app": type(
+            "App",
+            (),
+            {
+                "state": type(
+                    "State",
+                    (),
+                    {"telemetry_config": TelemetryConfig(enabled=False)},
+                )()
+            },
+        )(),
+    }
+    req = Request(scope)
+    middleware = TelemetryMiddleware(_dummy_handler)
+    await middleware.dispatch(req, _dummy_handler)
+    assert req.state.client_ip == "10.0.0.5"
+
+
+async def test_middleware_trusts_xff_when_enabled():
+    """When enabled and request from trusted CIDR, use XFF leftmost IP."""
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/search",
+        "headers": [
+            (b"x-forwarded-for", b"198.51.100.7"),
+        ],
+        "client": ("10.0.0.42", 54321),
+        "app": type(
+            "App",
+            (),
+            {
+                "state": type(
+                    "State",
+                    (),
+                    {
+                        "telemetry_config": TelemetryConfig(
+                            enabled=True,
+                            trusted_cidrs=["10.0.0.0/8"],
+                        )
+                    },
+                )()
+            },
+        )(),
+    }
+    req = Request(scope)
+    middleware = TelemetryMiddleware(_dummy_handler)
+    await middleware.dispatch(req, _dummy_handler)
+    assert req.state.client_ip == "198.51.100.7"
