@@ -46,6 +46,9 @@ class AuditEntry:
     provider_used: str
     latency_ms: int
     status: Literal["success", "error", "blocked"]
+    source_ip: str = ""
+    interface: str = "rest"
+    response_bytes: int = 0
     attempt_number: int = 1
     ts: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     policy_matched: str | None = None
